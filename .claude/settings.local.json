@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial project setup - Phase 1 complete\n\n- Created monorepo structure with backend/ and frontend/\n- Backend: FastAPI with SQLAlchemy, Alembic, JWT auth\n- Frontend: Next.js 14 with TypeScript, TailwindCSS\n- Docker Compose with PostgreSQL, backend, frontend services\n- Initialized Alembic for database migrations\n- Setup environment variables and configuration\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git config:*)",
+      "Bash(git reset:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
