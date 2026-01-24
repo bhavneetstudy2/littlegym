@@ -5,7 +5,22 @@
       "Bash(git config:*)",
       "Bash(git reset:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(docker-compose build:*)",
+      "Bash(node --version:*)",
+      "Bash(npm --version:*)",
+      "Bash(npm install)",
+      "Bash(python -m pip install:*)",
+      "Bash(docker:*)",
+      "Bash(python -m uvicorn:*)",
+      "Bash(ping:*)",
+      "Bash(curl:*)",
+      "Bash(python -m alembic:*)",
+      "Bash(alembic revision:*)",
+      "Bash(python -c:*)",
+      "Bash(\"C:\\\\Users\\\\Administrator\\\\AppData\\\\Local\\\\Python\\\\pythoncore-3.14-64\\\\Scripts\\\\alembic.exe\" revision --autogenerate -m \"Add centers and users tables\")",
+      "Bash(\"C:\\\\Users\\\\Administrator\\\\AppData\\\\Local\\\\Python\\\\pythoncore-3.14-64\\\\Scripts\\\\alembic.exe\" upgrade head)",
+      "Bash(python seed_data.py:*)"
     ]
   }
 }

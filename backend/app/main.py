@@ -17,10 +17,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# TODO: Include routers after they are created
-# from app.api.v1 import auth, centers, users, leads
-# app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
-# app.include_router(centers.router, prefix="/api/v1/centers", tags=["centers"])
+# Include API routers
+from app.api.v1 import auth
+
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 
 
 @app.get("/")

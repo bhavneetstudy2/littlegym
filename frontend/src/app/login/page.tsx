@@ -16,20 +16,34 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // TODO: Replace with actual API call when auth endpoints are ready
-      console.log('Login attempt:', { email, password });
+      // Call backend API
+      const response = await fetch('http://localhost:8000/api/v1/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Login failed');
+      }
 
-      // For now, just show success message
-      alert('Login functionality will be implemented in Phase 2!\n\nFor testing, you can see:\n- Email: ' + email + '\n- Password: ' + password);
+      const data = await response.json();
+
+      // Store token in localStorage
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      // Show success message with user info
+      alert(`✅ Login Successful!\n\nWelcome ${data.user.name}!\nRole: ${data.user.role}\nEmail: ${data.user.email}`);
 
       // Navigate to dashboard (will create later)
-      // router.push('/dashboard');
+      router.push('/dashboard');
 
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

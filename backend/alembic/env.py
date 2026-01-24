@@ -24,7 +24,7 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 # Import all models here so Alembic can detect them
-# from app.models import center, user, child, parent, lead, etc.
+from app.models import center, user  # noqa: F401
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
