@@ -14,7 +14,7 @@ export default function Home() {
             Login
           </a>
           <a
-            href="http://localhost:8000/docs"
+            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/docs`}
             target="_blank"
             rel="noopener noreferrer"
             className="px-6 py-3 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90"

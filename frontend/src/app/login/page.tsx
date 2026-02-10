@@ -17,7 +17,8 @@ export default function LoginPage() {
 
     try {
       // Call backend API
-      const response = await fetch('http://localhost:8000/api/v1/auth/login', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/v1/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -36,11 +37,8 @@ export default function LoginPage() {
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      // Show success message with user info
-      alert(`✅ Login Successful!\n\nWelcome ${data.user.name}!\nRole: ${data.user.role}\nEmail: ${data.user.email}`);
-
-      // Navigate to dashboard (will create later)
-      router.push('/dashboard');
+      // Full page reload so CenterContext re-initializes with the new token
+      window.location.href = '/dashboard';
 
     } catch (err: any) {
       setError(err.message || 'An error occurred. Please try again.');
