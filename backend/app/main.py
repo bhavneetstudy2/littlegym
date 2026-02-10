@@ -30,7 +30,7 @@ app.add_middleware(
 )
 
 # Include API routers
-from app.api.v1 import auth, centers, leads, intro_visits, enrollments, attendance, curriculum, report_cards
+from app.api.v1 import auth, centers, leads, intro_visits, enrollments, attendance, curriculum, report_cards, csv_import
 from app.api.v1.mdm import class_types
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
@@ -42,6 +42,7 @@ app.include_router(attendance.router, prefix="/api/v1")
 app.include_router(curriculum.router, prefix="/api/v1")
 app.include_router(class_types.router, prefix="/api/v1")
 app.include_router(report_cards.router, prefix="/api/v1")
+app.include_router(csv_import.router, prefix="/api/v1")
 
 
 @app.exception_handler(Exception)
