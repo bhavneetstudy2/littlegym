@@ -6,7 +6,10 @@ from app.config import settings
 engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True,
-    echo=False  # Set to True for SQL query logging
+    pool_size=5,
+    max_overflow=10,
+    pool_recycle=300,
+    echo=False,
 )
 
 # Create session factory

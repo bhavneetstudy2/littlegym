@@ -13,56 +13,47 @@ router = APIRouter()
 
 @router.post("/login", response_model=LoginResponse)
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
-    """
-    Login endpoint - authenticate user and return JWT token.
+    try:
+        user = db.query(User).filter(User.email == login_data.email).first()
 
-    Args:
-        login_data: Email and password
-        db: Database session
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
-    Returns:
-        Access token and user data
+        if not verify_password(login_data.password, user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
-    Raises:
-        HTTPException: If credentials are invalid
-    """
-    # Find user by email
-    user = db.query(User).filter(User.email == login_data.email).first()
+        if user.status != "ACTIVE":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User account is inactive"
+            )
 
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": str(user.id)},
+            expires_delta=access_token_expires
         )
 
-    # Verify password
-    if not verify_password(login_data.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
+        return LoginResponse(
+            access_token=access_token,
+            token_type="bearer",
+            user=UserResponse.model_validate(user)
         )
-
-    # Check if user is active
-    if user.status != "ACTIVE":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User account is inactive"
-        )
-
-    # Create access token
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": str(user.id)},
-        expires_delta=access_token_expires
-    )
-
-    return LoginResponse(
-        access_token=access_token,
-        token_type="bearer",
-        user=UserResponse.model_validate(user)
-    )
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback, sys
+        traceback.print_exc(file=sys.stderr)
+        print(f"LOGIN ERROR: {e}", file=sys.stderr, flush=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/me", response_model=UserResponse)

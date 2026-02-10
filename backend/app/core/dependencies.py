@@ -42,9 +42,10 @@ async def get_current_user(
         if payload is None:
             raise credentials_exception
 
-        user_id: int = payload.get("sub")
-        if user_id is None:
+        user_id_str = payload.get("sub")
+        if user_id_str is None:
             raise credentials_exception
+        user_id = int(user_id_str)
 
     except JWTError:
         raise credentials_exception
@@ -95,6 +96,7 @@ def get_current_center_id(current_user: User = Depends(get_current_active_user))
 def require_role(*allowed_roles: UserRole):
     """
     Dependency factory to enforce role-based access.
+    SUPER_ADMIN always has access regardless of the allowed_roles list.
 
     Args:
         allowed_roles: Roles allowed to access the endpoint
@@ -103,6 +105,8 @@ def require_role(*allowed_roles: UserRole):
         Dependency function that checks user role
     """
     def role_checker(current_user: User = Depends(get_current_active_user)):
+        if current_user.role == UserRole.SUPER_ADMIN:
+            return current_user
         if current_user.role not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
