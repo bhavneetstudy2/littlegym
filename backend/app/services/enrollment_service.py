@@ -174,12 +174,19 @@ class EnrollmentService:
         """
         Check if enrollment is valid based on plan type.
 
+        All plan types can have visits_included (e.g. Quarterly = 24 classes).
+        Exhaustion is checked first, then date range.
+
         Returns:
             dict with 'is_valid' and 'reason' keys
         """
         today = date.today()
 
-        # Date-based plans
+        # Check visit exhaustion for ANY plan type that has visits_included
+        if enrollment.visits_included and enrollment.visits_used >= enrollment.visits_included:
+            return {"is_valid": False, "reason": "All visits used"}
+
+        # Date-based plans: also check date range
         if enrollment.plan_type.value in ["WEEKLY", "MONTHLY", "QUARTERLY", "YEARLY", "CUSTOM"]:
             if enrollment.start_date and enrollment.end_date:
                 if today < enrollment.start_date:
@@ -188,10 +195,8 @@ class EnrollmentService:
                     return {"is_valid": False, "reason": "Enrollment has expired"}
             return {"is_valid": True, "reason": None}
 
-        # Visit-based plans
+        # PAY_PER_VISIT (visit exhaustion already checked above)
         if enrollment.plan_type.value == "PAY_PER_VISIT":
-            if enrollment.visits_included and enrollment.visits_used >= enrollment.visits_included:
-                return {"is_valid": False, "reason": "All visits used"}
             return {"is_valid": True, "reason": None}
 
         return {"is_valid": True, "reason": None}

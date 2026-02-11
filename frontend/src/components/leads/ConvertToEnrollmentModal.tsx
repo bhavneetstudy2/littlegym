@@ -82,20 +82,24 @@ export default function ConvertToEnrollmentModal({
     }
   }, [batchId, batches]);
 
-  // Auto-calculate end date based on plan type
+  // Auto-calculate end date and booked classes based on plan type + days per week
   useEffect(() => {
     if (startDate && planType !== 'PAY_PER_VISIT' && planType !== 'CUSTOM') {
       const start = new Date(startDate);
       let end = new Date(start);
+      const daysPerWeek = Math.max(daysSelected.length, 1); // default 1 if none selected
+      let weeks = 1;
       switch (planType) {
-        case 'WEEKLY': end.setDate(end.getDate() + 7); break;
-        case 'MONTHLY': end.setMonth(end.getMonth() + 1); break;
-        case 'QUARTERLY': end.setMonth(end.getMonth() + 3); break;
-        case 'YEARLY': end.setFullYear(end.getFullYear() + 1); break;
+        case 'WEEKLY': weeks = 1; end.setDate(end.getDate() + 7); break;
+        case 'MONTHLY': weeks = 4; end.setMonth(end.getMonth() + 1); break;
+        case 'QUARTERLY': weeks = 12; end.setMonth(end.getMonth() + 3); break;
+        case 'YEARLY': weeks = 48; end.setFullYear(end.getFullYear() + 1); break;
       }
       setEndDate(end.toISOString().split('T')[0]);
+      // Auto-set booked classes = days_per_week × weeks
+      setBookedClasses(String(daysPerWeek * weeks));
     }
-  }, [startDate, planType]);
+  }, [startDate, planType, daysSelected.length]);
 
   const fetchBatches = async () => {
     try {
@@ -134,7 +138,7 @@ export default function ConvertToEnrollmentModal({
         plan_type: planType,
         start_date: startDate || null,
         end_date: endDate || null,
-        visits_included: planType === 'PAY_PER_VISIT' && bookedClasses ? parseInt(bookedClasses) : null,
+        visits_included: bookedClasses ? parseInt(bookedClasses) : null,
         days_selected: daysSelected.length > 0 ? daysSelected : null,
         notes: notes || null,
         payment: {

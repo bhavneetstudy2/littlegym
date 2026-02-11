@@ -91,6 +91,7 @@ class BatchStudentSummary(BaseModel):
     classes_remaining: int
     last_attendance_date: Optional[date] = None
     enrollment_status: str
+    is_present_today: Optional[bool] = None
 
 
 class QuickAttendanceCreate(BaseModel):

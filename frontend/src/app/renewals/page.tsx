@@ -229,6 +229,27 @@ function RenewEnrollmentModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  // Auto-calculate end date and visits_included based on plan type + days per week
+  useEffect(() => {
+    if (formData.start_date && formData.plan_type !== 'PAY_PER_VISIT' && formData.plan_type !== 'CUSTOM') {
+      const start = new Date(formData.start_date);
+      let end = new Date(start);
+      const daysPerWeek = Math.max(formData.days_selected.length, 1);
+      let weeks = 1;
+      switch (formData.plan_type) {
+        case 'WEEKLY': weeks = 1; end.setDate(end.getDate() + 7); break;
+        case 'MONTHLY': weeks = 4; end.setMonth(end.getMonth() + 1); break;
+        case 'QUARTERLY': weeks = 12; end.setMonth(end.getMonth() + 3); break;
+        case 'YEARLY': weeks = 48; end.setFullYear(end.getFullYear() + 1); break;
+      }
+      setFormData(prev => ({
+        ...prev,
+        end_date: end.toISOString().split('T')[0],
+        visits_included: daysPerWeek * weeks,
+      }));
+    }
+  }, [formData.start_date, formData.plan_type, formData.days_selected.length]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -241,7 +262,7 @@ function RenewEnrollmentModal({
         plan_type: formData.plan_type,
         start_date: formData.start_date,
         end_date: formData.end_date || null,
-        visits_included: formData.plan_type === 'PAY_PER_VISIT' ? formData.visits_included : null,
+        visits_included: formData.visits_included || null,
         days_selected: formData.days_selected,
       });
       onSuccess();

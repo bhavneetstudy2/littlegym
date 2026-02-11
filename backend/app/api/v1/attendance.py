@@ -217,11 +217,13 @@ def get_child_attendance(
 def get_batch_students_with_summary(
     batch_id: int,
     center_id: Optional[int] = Query(None),
+    include_exhausted: bool = Query(False, description="Include students with exhausted visits"),
+    session_date: Optional[date] = Query(None, description="Date to check existing attendance"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all students enrolled in a batch with their attendance summary"""
-    # Determine center_id
+    """Get students in a batch with attendance summary.
+    Excludes exhausted students by default. Pass session_date to include today's attendance in one call."""
     if current_user.role == UserRole.SUPER_ADMIN:
         if not center_id:
             raise HTTPException(status_code=400, detail="center_id required for super admin")
@@ -247,7 +249,21 @@ def get_batch_students_with_summary(
 
     batch_name = enrollments[0].batch.name if enrollments[0].batch else ""
 
-    # Build results directly from enrollment data (visits_used already tracked on enrollment)
+    # If session_date provided, fetch existing attendance in one query
+    present_child_ids: set = set()
+    if session_date:
+        session = db.query(ClassSession).filter(
+            ClassSession.batch_id == batch_id,
+            ClassSession.session_date == session_date,
+            ClassSession.center_id == effective_center_id,
+        ).first()
+        if session:
+            present_records = db.query(Attendance.child_id).filter(
+                Attendance.class_session_id == session.id,
+                Attendance.status == AttendanceStatus.PRESENT,
+            ).all()
+            present_child_ids = {r[0] for r in present_records}
+
     results = []
     for enrollment in enrollments:
         child = enrollment.child
@@ -255,6 +271,10 @@ def get_batch_students_with_summary(
             continue
 
         classes_remaining = max(0, (enrollment.visits_included or 0) - (enrollment.visits_used or 0))
+
+        # Skip exhausted students unless explicitly requested
+        if not include_exhausted and classes_remaining <= 0:
+            continue
 
         results.append(BatchStudentSummary(
             child_id=child.id,
@@ -266,7 +286,8 @@ def get_batch_students_with_summary(
             classes_attended=enrollment.visits_used or 0,
             classes_remaining=classes_remaining,
             last_attendance_date=None,
-            enrollment_status=enrollment.status.value
+            enrollment_status=enrollment.status.value,
+            is_present_today=child.id in present_child_ids if session_date else None,
         ))
 
     return sorted(results, key=lambda x: x.child_name)

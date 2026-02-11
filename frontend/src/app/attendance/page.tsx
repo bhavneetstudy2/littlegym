@@ -27,6 +27,7 @@ interface StudentSummary {
   classes_remaining: number;
   last_attendance_date: string | null;
   enrollment_status: string;
+  is_present_today: boolean | null;
 }
 
 interface AttendanceResponse {
@@ -63,7 +64,10 @@ export default function AttendancePage() {
   const [selectedBatchId, setSelectedBatchId] = useState<number | null>(null);
   const [students, setStudents] = useState<StudentSummary[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  // Optimistic present tracking - seeded from API, updated instantly on mark/undo
   const [presentIds, setPresentIds] = useState<Set<number>>(new Set());
+  // Track children that were just marked in this session for green feedback
+  const [justMarkedIds, setJustMarkedIds] = useState<Set<number>>(new Set());
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
@@ -106,35 +110,26 @@ export default function AttendancePage() {
     if (selectedCenter) loadBatches();
   }, [selectedCenter, loadBatches]);
 
-  // Load students + existing attendance
+  // Load students + existing attendance in ONE call (was 3 sequential calls before)
   const loadStudents = useCallback(async (batchId: number) => {
     if (!selectedCenter) return;
     setLoadingStudents(true);
     setError(null);
     try {
+      // Single API call: students + attendance status via session_date param
+      // Backend also excludes exhausted students by default
       const data = await api.get<StudentSummary[]>(
-        `/api/v1/attendance/batches/${batchId}/students?center_id=${selectedCenter.id}`
+        `/api/v1/attendance/batches/${batchId}/students?center_id=${selectedCenter.id}&session_date=${selectedDate}`
       );
       setStudents(data);
-      try {
-        const sessions = await api.get<any[]>(
-          `/api/v1/attendance/sessions?batch_id=${batchId}&session_date=${selectedDate}&center_id=${selectedCenter.id}`
-        );
-        if (sessions.length > 0) {
-          const records = await api.get<AttendanceResponse[]>(
-            `/api/v1/attendance/sessions/${sessions[0].id}/attendance`
-          );
-          const alreadyPresent = new Set<number>();
-          records.forEach((r) => {
-            if (r.status === 'PRESENT') alreadyPresent.add(r.child_id);
-          });
-          setPresentIds(alreadyPresent);
-        } else {
-          setPresentIds(new Set());
-        }
-      } catch {
-        setPresentIds(new Set());
-      }
+
+      // Build presentIds from is_present_today field returned by backend
+      const alreadyPresent = new Set<number>();
+      data.forEach((s) => {
+        if (s.is_present_today) alreadyPresent.add(s.child_id);
+      });
+      setPresentIds(alreadyPresent);
+      setJustMarkedIds(new Set());
     } catch (err: any) {
       setError(err.message || 'Failed to load students');
     } finally {
@@ -150,10 +145,16 @@ export default function AttendancePage() {
     }
   }, [selectedBatchId, selectedCenter, selectedDate, loadStudents]);
 
+  // Mark present - OPTIMISTIC UI, no refetch needed
   const markPresent = async (childId: number) => {
     if (!selectedBatchId || !selectedCenter || savingChildId) return;
     setSavingChildId(childId);
     setWarnings([]);
+
+    // Optimistic: immediately move to present + green
+    setPresentIds((prev) => new Set([...prev, childId]));
+    setJustMarkedIds((prev) => new Set([...prev, childId]));
+
     try {
       const results = await api.post<AttendanceResponse[]>(
         `/api/v1/attendance/quick-mark?center_id=${selectedCenter.id}`,
@@ -163,7 +164,6 @@ export default function AttendancePage() {
           attendances: [{ child_id: childId, status: 'PRESENT', notes: null }],
         }
       );
-      setPresentIds((prev) => new Set([...prev, childId]));
       const student = students.find((s) => s.child_id === childId);
       showToast(`${student?.child_name || 'Student'} marked present`);
       const result = results.find((r) => r.child_id === childId);
@@ -171,15 +171,24 @@ export default function AttendancePage() {
         setWarnings((prev) => [...prev, `${student?.child_name}: ${result.visit_warning}`]);
       }
     } catch (err: any) {
+      // Rollback optimistic update on failure
+      setPresentIds((prev) => { const next = new Set(prev); next.delete(childId); return next; });
+      setJustMarkedIds((prev) => { const next = new Set(prev); next.delete(childId); return next; });
       showToast(`Failed: ${err.message}`);
     } finally {
       setSavingChildId(null);
     }
   };
 
+  // Undo / mark absent - OPTIMISTIC UI, no refetch
   const undoPresent = async (childId: number) => {
     if (!selectedBatchId || !selectedCenter || savingChildId) return;
     setSavingChildId(childId);
+
+    // Optimistic: immediately remove from present
+    setPresentIds((prev) => { const next = new Set(prev); next.delete(childId); return next; });
+    setJustMarkedIds((prev) => { const next = new Set(prev); next.delete(childId); return next; });
+
     try {
       await api.post<AttendanceResponse[]>(
         `/api/v1/attendance/quick-mark?center_id=${selectedCenter.id}`,
@@ -189,21 +198,18 @@ export default function AttendancePage() {
           attendances: [{ child_id: childId, status: 'ABSENT', notes: 'Undo' }],
         }
       );
-      setPresentIds((prev) => {
-        const next = new Set(prev);
-        next.delete(childId);
-        return next;
-      });
       const student = students.find((s) => s.child_id === childId);
       showToast(`${student?.child_name || 'Student'} removed`);
     } catch (err: any) {
+      // Rollback: put back into present
+      setPresentIds((prev) => new Set([...prev, childId]));
       showToast(`Failed: ${err.message}`);
     } finally {
       setSavingChildId(null);
     }
   };
 
-  // Derived
+  // Derived - exhausted already excluded by backend
   const unmarkedStudents = useMemo(() => students.filter((s) => !presentIds.has(s.child_id)), [students, presentIds]);
   const presentStudents = useMemo(() => students.filter((s) => presentIds.has(s.child_id)), [students, presentIds]);
 
@@ -226,7 +232,6 @@ export default function AttendancePage() {
     return letters;
   }, [unmarkedStudents]);
 
-  const selectedBatch = batches.find((b) => b.id === selectedBatchId);
   const isSaved = presentIds.size > 0;
 
   // --- RENDER ---
@@ -278,7 +283,7 @@ export default function AttendancePage() {
       <div className="flex items-start justify-between mb-5">
         <div>
           <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Attendance</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Click a student to mark present</p>
+          <p className="text-sm text-gray-500 mt-0.5">Tap a student to mark present</p>
         </div>
         <div className="flex items-center gap-3">
           <input
@@ -387,7 +392,7 @@ export default function AttendancePage() {
             </div>
           </div>
 
-          {/* Alphabet filter - only show letters that have students */}
+          {/* Alphabet filter */}
           <div className="flex flex-wrap gap-1 mb-4">
             <button
               onClick={() => setActiveLetter(null)}
@@ -415,7 +420,7 @@ export default function AttendancePage() {
             ))}
           </div>
 
-          {/* Student cards grid */}
+          {/* Student cards grid - unmarked */}
           {filteredStudents.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-gray-400">
@@ -436,7 +441,6 @@ export default function AttendancePage() {
                 const isSaving = savingChildId === student.child_id;
                 const initials = getInitials(student.child_name);
                 const color = getAvatarColor(student.child_name);
-                const isExhausted = student.classes_remaining <= 0;
                 const isLow = student.classes_remaining > 0 && student.classes_remaining <= 3;
 
                 return (
@@ -446,7 +450,6 @@ export default function AttendancePage() {
                     disabled={isSaving}
                     className="bg-white rounded-xl border border-gray-200 p-4 text-center hover:border-blue-400 hover:shadow-md active:scale-[0.97] transition-all disabled:opacity-50 group relative"
                   >
-                    {/* Avatar */}
                     <div className={`w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold mx-auto mb-2 ${color} group-hover:ring-2 group-hover:ring-blue-300 group-hover:ring-offset-2 transition-all`}>
                       {isSaving ? (
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -454,14 +457,10 @@ export default function AttendancePage() {
                         initials
                       )}
                     </div>
-                    {/* Name */}
                     <div className="text-sm font-medium text-gray-900 truncate">{student.child_name}</div>
-                    {/* Enrollment ID */}
                     <div className="text-xs text-gray-400 mt-0.5">#{student.enrollment_id}</div>
-                    {/* Classes info */}
                     <div className="mt-2 flex items-center justify-center gap-1.5">
                       <span className="text-[10px] text-gray-400">{student.classes_attended}/{student.classes_booked}</span>
-                      {isExhausted && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">Exhausted</span>}
                       {isLow && <span className="text-[10px] bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded font-medium">{student.classes_remaining} left</span>}
                     </div>
                   </button>
@@ -470,7 +469,7 @@ export default function AttendancePage() {
             </div>
           )}
 
-          {/* Present Today */}
+          {/* Present Today - green tiles with checkmark */}
           {presentStudents.length > 0 && (
             <div className="mt-6">
               <div className="flex items-center gap-3 mb-3">
@@ -485,30 +484,42 @@ export default function AttendancePage() {
                   />
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {presentStudents.map((student) => {
                   const isSaving = savingChildId === student.child_id;
                   const initials = getInitials(student.child_name);
                   const color = getAvatarColor(student.child_name);
+                  const wasJustMarked = justMarkedIds.has(student.child_id);
                   return (
                     <div
                       key={student.child_id}
-                      className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-full pl-1 pr-2 py-1"
+                      className={`rounded-xl p-4 text-center transition-all relative ${
+                        wasJustMarked
+                          ? 'bg-green-50 border-2 border-green-500 shadow-sm shadow-green-200'
+                          : 'bg-green-50 border border-green-200'
+                      }`}
                     >
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${color}`}>
+                      {/* Green checkmark badge */}
+                      <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shadow-sm">
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      </div>
+                      {/* Avatar with green ring */}
+                      <div className={`w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold mx-auto mb-2 ${color} ring-2 ring-green-400 ring-offset-2`}>
                         {initials}
                       </div>
-                      <span className="text-sm font-medium text-green-800 whitespace-nowrap">{student.child_name}</span>
+                      <div className="text-sm font-medium text-green-900 truncate">{student.child_name}</div>
+                      <div className="text-xs text-green-500 mt-0.5">#{student.enrollment_id}</div>
+                      {/* Undo button */}
                       <button
                         onClick={() => undoPresent(student.child_id)}
                         disabled={isSaving}
-                        className="ml-0.5 text-green-400 hover:text-red-500 transition disabled:opacity-50 flex-shrink-0"
+                        className="mt-2 text-xs text-green-600 hover:text-red-500 transition disabled:opacity-50 font-medium"
                         title="Undo"
                       >
                         {isSaving ? (
-                          <div className="w-3.5 h-3.5 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+                          <div className="w-3.5 h-3.5 border-2 border-green-400 border-t-transparent rounded-full animate-spin inline-block" />
                         ) : (
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                          'Undo'
                         )}
                       </button>
                     </div>
