@@ -14,15 +14,10 @@ app = FastAPI(
     description="Multi-tenant CRM for The Little Gym centers"
 )
 
-# CORS middleware - Allow frontend origins
+# CORS middleware - origins from settings (configurable via ALLOWED_ORIGINS env var)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:3002",
-        "http://localhost:3003",
-    ],
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
