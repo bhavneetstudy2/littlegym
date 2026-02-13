@@ -97,6 +97,7 @@ export default function EnrollmentsPage() {
   const { selectedCenter } = useCenter();
   const [enrollments, setEnrollments] = useState<EnrolledStudent[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
+  const [batchCounts, setBatchCounts] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -106,6 +107,17 @@ export default function EnrollmentsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [selectedEnrollmentId, setSelectedEnrollmentId] = useState<number | null>(null);
+  const [sortField, setSortField] = useState<string>('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
 
   // Debounce the search query (400ms)
   useEffect(() => {
@@ -132,13 +144,29 @@ export default function EnrollmentsPage() {
       if (batchFilter) url += `&batch_id=${batchFilter}`;
       if (debouncedSearch.trim().length >= 2) url += `&search=${encodeURIComponent(debouncedSearch.trim())}`;
 
-      const [enrollmentsRes, batchesRes] = await Promise.all([
+      // Always fetch counts without batch filter so batch cards show accurate totals
+      let countUrl = `/api/v1/enrollments/students?center_id=${selectedCenter.id}&limit=500`;
+      if (statusFilter) countUrl += `&status=${statusFilter}`;
+      if (debouncedSearch.trim().length >= 2) countUrl += `&search=${encodeURIComponent(debouncedSearch.trim())}`;
+
+      const [enrollmentsRes, batchesRes, allForCounts] = await Promise.all([
         api.get<EnrolledStudent[]>(url),
-        api.get<Batch[]>(`/api/v1/enrollments/batches?center_id=${selectedCenter.id}`)
+        api.get<Batch[]>(`/api/v1/enrollments/batches?center_id=${selectedCenter.id}`),
+        batchFilter ? api.get<EnrolledStudent[]>(countUrl) : Promise.resolve(null),
       ]);
 
       setEnrollments(enrollmentsRes);
       setBatches(batchesRes);
+
+      // Compute batch counts from unfiltered data
+      const countsSource = allForCounts || enrollmentsRes;
+      const counts: Record<number, number> = {};
+      countsSource.forEach(e => {
+        if (e.batch?.id) {
+          counts[e.batch.id] = (counts[e.batch.id] || 0) + 1;
+        }
+      });
+      setBatchCounts(counts);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load enrollments');
     } finally {
@@ -146,7 +174,28 @@ export default function EnrollmentsPage() {
     }
   };
 
-  const filteredEnrollments = enrollments;
+  const filteredEnrollments = [...enrollments].sort((a, b) => {
+    if (!sortField) return 0;
+    const dir = sortDirection === 'asc' ? 1 : -1;
+    switch (sortField) {
+      case 'student':
+        return dir * (a.child.first_name || '').localeCompare(b.child.first_name || '');
+      case 'batch':
+        return dir * (a.batch?.name || '').localeCompare(b.batch?.name || '');
+      case 'plan':
+        return dir * a.plan_type.localeCompare(b.plan_type);
+      case 'validity':
+        return dir * ((a.start_date || '') > (b.start_date || '') ? 1 : -1);
+      case 'visits':
+        return dir * (a.visits_used - b.visits_used);
+      case 'paid':
+        return dir * (a.total_paid - b.total_paid);
+      case 'status':
+        return dir * a.status.localeCompare(b.status);
+      default:
+        return 0;
+    }
+  });
 
   if (!selectedCenter) {
     return (
@@ -199,7 +248,7 @@ export default function EnrollmentsPage() {
         {batches.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             {batches.map((batch) => {
-              const batchCount = enrollments.filter(e => e.batch?.id === batch.id).length;
+              const batchCount = batchCounts[batch.id] || 0;
               return (
                 <div
                   key={batch.id}
@@ -278,14 +327,31 @@ export default function EnrollmentsPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parent</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Batch</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Validity</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visits</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paid</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                    {[
+                      { key: 'student', label: 'Student' },
+                      { key: '', label: 'Parent' },
+                      { key: 'batch', label: 'Batch' },
+                      { key: 'plan', label: 'Plan' },
+                      { key: 'validity', label: 'Validity' },
+                      { key: 'visits', label: 'Visits' },
+                      { key: 'paid', label: 'Paid' },
+                      { key: 'status', label: 'Status' },
+                    ].map(col => (
+                      <th
+                        key={col.label}
+                        className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase ${col.key ? 'cursor-pointer hover:text-gray-700 select-none' : ''} ${col.label === 'Status' ? 'text-center' : ''}`}
+                        onClick={() => col.key && handleSort(col.key)}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          {col.label}
+                          {col.key && sortField === col.key && (
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'} />
+                            </svg>
+                          )}
+                        </span>
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">

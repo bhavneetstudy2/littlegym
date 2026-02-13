@@ -5,7 +5,7 @@ export interface User {
   name: string;
   email: string;
   phone: string;
-  role: 'SUPER_ADMIN' | 'CENTER_ADMIN' | 'TRAINER' | 'COUNSELOR';
+  role: 'SUPER_ADMIN' | 'CENTER_ADMIN' | 'CENTER_MANAGER' | 'TRAINER' | 'COUNSELOR';
   status: 'ACTIVE' | 'INACTIVE';
   center_id: number | null;
 }
@@ -199,6 +199,94 @@ export interface ReportCard {
   updated_at: string;
   // Optional relations
   child?: Child;
+}
+
+// ── Weekly Progress Tracking ──
+
+export type MeasurementType = 'LEVEL' | 'COUNT' | 'TIME' | 'MEASUREMENT';
+
+export interface ProgressionLevel {
+  id: number;
+  activity_category_id: number;
+  level_number: number;
+  name: string;
+  description: string | null;
+}
+
+export interface ActivityCategory {
+  id: number;
+  curriculum_id: number;
+  name: string;
+  category_group: string | null;
+  measurement_type: MeasurementType;
+  measurement_unit: string | null;
+  display_order: number;
+  description: string | null;
+  progression_levels: ProgressionLevel[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WeeklyProgressEntry {
+  activity_category_id: number;
+  progression_level_id: number | null;
+  numeric_value: number | null;
+  notes: string | null;
+}
+
+export interface WeeklyProgressBulkPayload {
+  child_id: number;
+  enrollment_id: number | null;
+  week_number: number;
+  week_start_date: string;
+  entries: WeeklyProgressEntry[];
+}
+
+export interface WeeklyProgressResponse {
+  id: number;
+  center_id: number;
+  child_id: number;
+  enrollment_id: number | null;
+  activity_category_id: number;
+  week_number: number;
+  week_start_date: string;
+  progression_level_id: number | null;
+  numeric_value: number | null;
+  notes: string | null;
+  updated_by_user_id: number | null;
+  last_updated_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WeeklyProgressWeekSummary {
+  week_number: number;
+  week_start_date: string;
+  total_activities: number;
+  completed_activities: number;
+}
+
+export interface ChildTrainerNotes {
+  id: number;
+  center_id: number;
+  child_id: number;
+  enrollment_id: number | null;
+  parent_expectation: string | null;
+  progress_check: string | null;
+  updated_by_user_id: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BatchStudentProgressSummary {
+  child_id: number;
+  child_name: string;
+  enrollment_id: number | null;
+  enrollment_start_date: string | null;
+  current_week: number;
+  latest_recorded_week: number | null;
+  total_activities: number;
+  completed_activities: number;
 }
 
 // Dashboard stats interface

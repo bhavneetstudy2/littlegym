@@ -15,6 +15,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
   const [isAuthChecked, setIsAuthChecked] = useState(false);
 
+  // Role-based route restrictions
+  const roleAllowedPaths: Record<string, string[]> = {
+    TRAINER: ['/attendance', '/progress'],
+    CENTER_MANAGER: ['/attendance', '/progress', '/students'],
+  };
+
   useEffect(() => {
     // Skip auth check for login page and home page
     if (pathname === '/login' || pathname === '/') {
@@ -27,6 +33,22 @@ export default function AppLayout({ children }: AppLayoutProps) {
     if (!token) {
       router.push('/login');
       return;
+    }
+
+    // Restrict roles to allowed modules only
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const user = JSON.parse(userData);
+      const allowedPaths = roleAllowedPaths[user.role];
+      if (allowedPaths) {
+        const isAllowed = allowedPaths.some(
+          p => pathname === p || pathname.startsWith(`${p}/`)
+        );
+        if (!isAllowed) {
+          router.push('/attendance');
+          return;
+        }
+      }
     }
 
     setIsAuthChecked(true);

@@ -37,8 +37,9 @@ export default function LoginPage() {
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      // Full page reload so CenterContext re-initializes with the new token
-      window.location.href = '/dashboard';
+      // Redirect restricted roles to attendance, others to dashboard
+      const redirectPath = (data.user.role === 'TRAINER' || data.user.role === 'CENTER_MANAGER') ? '/attendance' : '/dashboard';
+      window.location.href = redirectPath;
 
     } catch (err: any) {
       setError(err.message || 'An error occurred. Please try again.');

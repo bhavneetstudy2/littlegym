@@ -142,7 +142,7 @@ def update_skill_progress(
     progress_data: SkillProgressCreate,
     center_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.TRAINER, UserRole.CENTER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.TRAINER, UserRole.CENTER_ADMIN, UserRole.CENTER_MANAGER))
 ):
     """Update skill progress for a child"""
     if current_user.role == UserRole.SUPER_ADMIN:
@@ -172,7 +172,7 @@ def bulk_update_skill_progress(
     bulk_data: SkillProgressBulkUpdate,
     center_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.TRAINER, UserRole.CENTER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.TRAINER, UserRole.CENTER_ADMIN, UserRole.CENTER_MANAGER))
 ):
     """Update multiple skills for a child at once"""
     if current_user.role == UserRole.SUPER_ADMIN:

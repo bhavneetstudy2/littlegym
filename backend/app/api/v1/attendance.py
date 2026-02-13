@@ -31,7 +31,7 @@ def create_class_session(
     session_data: ClassSessionCreate,
     center_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN, UserRole.TRAINER))
+    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN, UserRole.CENTER_MANAGER, UserRole.TRAINER))
 ):
     """Create a class session"""
     if current_user.role == UserRole.SUPER_ADMIN:
@@ -109,7 +109,7 @@ def get_class_session(
 def mark_attendance(
     attendance_data: AttendanceCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.TRAINER, UserRole.CENTER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.TRAINER, UserRole.CENTER_ADMIN, UserRole.CENTER_MANAGER))
 ):
     """Mark attendance for a single student"""
     # Verify session exists and belongs to center
@@ -147,7 +147,7 @@ def mark_attendance(
 def mark_bulk_attendance(
     bulk_data: AttendanceBulkCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.TRAINER, UserRole.CENTER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.TRAINER, UserRole.CENTER_ADMIN, UserRole.CENTER_MANAGER))
 ):
     """Mark attendance for multiple students at once"""
     # Verify session exists and belongs to center
@@ -249,20 +249,21 @@ def get_batch_students_with_summary(
 
     batch_name = enrollments[0].batch.name if enrollments[0].batch else ""
 
-    # If session_date provided, fetch existing attendance in one query
+    # If session_date provided, fetch present child IDs in one joined query
     present_child_ids: set = set()
     if session_date:
-        session = db.query(ClassSession).filter(
-            ClassSession.batch_id == batch_id,
-            ClassSession.session_date == session_date,
-            ClassSession.center_id == effective_center_id,
-        ).first()
-        if session:
-            present_records = db.query(Attendance.child_id).filter(
-                Attendance.class_session_id == session.id,
+        present_records = (
+            db.query(Attendance.child_id)
+            .join(ClassSession, Attendance.class_session_id == ClassSession.id)
+            .filter(
+                ClassSession.batch_id == batch_id,
+                ClassSession.session_date == session_date,
+                ClassSession.center_id == effective_center_id,
                 Attendance.status == AttendanceStatus.PRESENT,
-            ).all()
-            present_child_ids = {r[0] for r in present_records}
+            )
+            .all()
+        )
+        present_child_ids = {r[0] for r in present_records}
 
     results = []
     for enrollment in enrollments:
@@ -298,7 +299,7 @@ def quick_mark_attendance(
     data: QuickAttendanceCreate,
     center_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.TRAINER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.TRAINER, UserRole.CENTER_ADMIN, UserRole.CENTER_MANAGER, UserRole.SUPER_ADMIN))
 ):
     """Quick attendance marking - auto-creates session if needed"""
     # Determine center_id
@@ -309,12 +310,7 @@ def quick_mark_attendance(
     else:
         effective_center_id = current_user.center_id
 
-    # Verify batch belongs to center
-    batch = db.query(Batch).filter(Batch.id == data.batch_id, Batch.center_id == effective_center_id).first()
-    if not batch:
-        raise HTTPException(status_code=404, detail="Batch not found")
-
-    # Find or create session for this date and batch
+    # Find existing session OR verify batch + create session in one flow
     session = db.query(ClassSession).filter(
         ClassSession.batch_id == data.batch_id,
         ClassSession.session_date == data.session_date,
@@ -322,6 +318,10 @@ def quick_mark_attendance(
     ).first()
 
     if not session:
+        # Only query batch if we need to create a session (need start/end time)
+        batch = db.query(Batch).filter(Batch.id == data.batch_id, Batch.center_id == effective_center_id).first()
+        if not batch:
+            raise HTTPException(status_code=404, detail="Batch not found")
         session = ClassSession(
             center_id=effective_center_id,
             batch_id=data.batch_id,
@@ -333,12 +333,12 @@ def quick_mark_attendance(
             updated_by_id=current_user.id if current_user.id else 1
         )
         db.add(session)
-        db.flush()
+        db.flush()  # Need session.id for attendance records
 
     # Pre-fetch all child IDs from the request
     child_ids = [att.child_id for att in data.attendances]
 
-    # Batch-fetch existing attendance records for this session (1 query instead of N)
+    # Batch-fetch existing attendance + enrollments in 2 queries
     existing_records = {
         att_rec.child_id: att_rec
         for att_rec in db.query(Attendance).filter(
@@ -346,8 +346,6 @@ def quick_mark_attendance(
             Attendance.child_id.in_(child_ids)
         ).all()
     }
-
-    # Batch-fetch enrollments for all children in this batch (1 query instead of N)
     enrollment_map = {
         enr.child_id: enr
         for enr in db.query(Enrollment).filter(
@@ -361,17 +359,43 @@ def quick_mark_attendance(
     results = []
     for att in data.attendances:
         existing = existing_records.get(att.child_id)
+        enrollment = enrollment_map.get(att.child_id)
+
+        # UNDO: If marking ABSENT, delete existing record and decrement visits_used
+        if att.status == AttendanceStatus.ABSENT:
+            if existing:
+                was_present = existing.status == AttendanceStatus.PRESENT
+                db.delete(existing)
+                # Decrement visits_used if was previously PRESENT
+                if was_present and enrollment and (enrollment.visits_used or 0) > 0:
+                    enrollment.visits_used = (enrollment.visits_used or 0) - 1
+            # Return a placeholder response for the deleted record
+            now = datetime.utcnow()
+            placeholder = Attendance(
+                id=existing.id if existing else 0,
+                center_id=effective_center_id,
+                class_session_id=session.id,
+                child_id=att.child_id,
+                enrollment_id=enrollment.id if enrollment else None,
+                status=AttendanceStatus.ABSENT,
+                notes=att.notes,
+                marked_by_user_id=current_user.id,
+                marked_at=now,
+                created_at=now,
+                updated_at=now,
+                created_by_id=current_user.id if current_user.id else 1,
+                updated_by_id=current_user.id if current_user.id else 1,
+            )
+            results.append(placeholder)
+            continue
 
         if existing:
             existing.status = att.status
             existing.notes = att.notes
             existing.marked_at = datetime.utcnow()
             existing.marked_by_user_id = current_user.id
-            db.flush()
             results.append(existing)
         else:
-            enrollment = enrollment_map.get(att.child_id)
-
             attendance = Attendance(
                 center_id=effective_center_id,
                 class_session_id=session.id,
@@ -385,7 +409,6 @@ def quick_mark_attendance(
                 updated_by_id=current_user.id if current_user.id else 1
             )
             db.add(attendance)
-            db.flush()
             results.append(attendance)
 
             # Update enrollment visits_used if marked PRESENT
@@ -397,6 +420,7 @@ def quick_mark_attendance(
                     )
                 enrollment.visits_used = (enrollment.visits_used or 0) + 1
 
+    # Commit flushes all pending changes (inserts, updates, deletes) in one round trip
     db.commit()
 
     # Build responses with warnings

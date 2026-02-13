@@ -336,13 +336,11 @@ if r.status_code in [200, 201]:
 else:
     print(f"[FAIL] Dead lead: {r.status_code} - {r.text[:200]}")
 
-# Expiring enrollments (known RBAC issue for SUPER_ADMIN)
-print("\n--- EXPIRING ENROLLMENTS (RBAC TEST) ---")
-r = requests.get(f"{BASE}/enrollments/expiring/list", headers=headers, params={"days": 30})
+# Expiring enrollments
+print("\n--- EXPIRING ENROLLMENTS ---")
+r = requests.get(f"{BASE}/enrollments/expiring/list", headers=headers, params={"days": 30, "center_id": CENTER_ID})
 if r.status_code == 200:
     print(f"[OK] Expiring enrollments: {len(r.json())} found")
-elif r.status_code == 403:
-    print(f"[BUG] Expiring endpoint returns 403 for SUPER_ADMIN (RBAC issue)")
 else:
     print(f"[FAIL] Expiring: {r.status_code} - {r.text[:200]}")
 

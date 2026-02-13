@@ -1,5 +1,7 @@
 from typing import List, Optional
+from datetime import date as date_type
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 import json
@@ -7,6 +9,7 @@ import json
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_role
 from app.models.user import User
+from app.models.child import Child
 from app.schemas.enrollment import (
     BatchCreate,
     BatchResponse,
@@ -94,7 +97,7 @@ def create_enrollment(
     lead_id: Optional[int] = Query(None),
     center_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN, UserRole.COUNSELOR, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN, UserRole.CENTER_MANAGER, UserRole.COUNSELOR, UserRole.SUPER_ADMIN))
 ):
     """Create a new enrollment with payment and optional discount"""
     # Determine center_id: super admin must provide it, others use their assigned center
@@ -339,6 +342,52 @@ def get_expiring_enrollments(
         days=days
     )
     return enrollments
+
+
+class ChildUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    dob: Optional[date_type] = None
+    school: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@router.patch("/children/{child_id}")
+def update_child(
+    child_id: int,
+    data: ChildUpdate,
+    center_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN, UserRole.CENTER_MANAGER, UserRole.COUNSELOR))
+):
+    """Update child info (name, DOB, school, notes)"""
+    if current_user.role == UserRole.SUPER_ADMIN:
+        if not center_id:
+            raise HTTPException(status_code=400, detail="center_id required for super admin")
+        effective_center_id = center_id
+    else:
+        effective_center_id = current_user.center_id
+
+    child = db.query(Child).filter(Child.id == child_id, Child.center_id == effective_center_id).first()
+    if not child:
+        raise HTTPException(status_code=404, detail="Child not found")
+
+    update_data = data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(child, field, value)
+    child.updated_by_id = current_user.id
+    db.commit()
+    db.refresh(child)
+
+    return {
+        "id": child.id,
+        "first_name": child.first_name,
+        "last_name": child.last_name,
+        "dob": str(child.dob) if child.dob else None,
+        "school": child.school,
+        "notes": child.notes,
+        "enquiry_id": child.enquiry_id,
+    }
 
 
 @router.get("/{enrollment_id}", response_model=EnrollmentDetailResponse)

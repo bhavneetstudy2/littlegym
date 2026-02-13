@@ -5,6 +5,7 @@ class UserRole(str, Enum):
     """User roles for role-based access control"""
     SUPER_ADMIN = "SUPER_ADMIN"
     CENTER_ADMIN = "CENTER_ADMIN"
+    CENTER_MANAGER = "CENTER_MANAGER"
     TRAINER = "TRAINER"
     COUNSELOR = "COUNSELOR"
 
@@ -117,3 +118,17 @@ class DiscountType(str, Enum):
     """Discount types"""
     PERCENT = "PERCENT"
     FLAT = "FLAT"
+
+
+class MeasurementType(str, Enum):
+    """Activity measurement types for progress tracking"""
+    LEVEL = "LEVEL"              # Named progression levels (gymnastics skills)
+    COUNT = "COUNT"              # Numeric count (push-ups, sit-ups)
+    TIME = "TIME"                # Duration/time (800m, speed test)
+    MEASUREMENT = "MEASUREMENT"  # Generic measurement (flexibility in cm)
+
+
+class CurriculumType(str, Enum):
+    """Curriculum types"""
+    GYMNASTICS = "GYMNASTICS"
+    GRADE_SCHOOL = "GRADE_SCHOOL"

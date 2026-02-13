@@ -149,6 +149,9 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'progress'>('overview');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({ first_name: '', last_name: '', dob: '', school: '', notes: '' });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (childId && centerId) {
@@ -207,6 +210,32 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
       setError(err.response?.data?.detail || 'Failed to load student data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const startEditing = () => {
+    if (!childInfo) return;
+    setEditData({
+      first_name: childInfo.first_name || '',
+      last_name: childInfo.last_name || '',
+      dob: childInfo.dob || '',
+      school: childInfo.school || '',
+      notes: childInfo.notes || '',
+    });
+    setIsEditing(true);
+  };
+
+  const saveEdit = async () => {
+    if (!childInfo) return;
+    setSaving(true);
+    try {
+      await api.patch(`/api/v1/enrollments/children/${childInfo.id}?center_id=${centerId}`, editData);
+      setChildInfo({ ...childInfo, ...editData });
+      setIsEditing(false);
+    } catch (err: any) {
+      alert(err.message || 'Failed to save');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -387,35 +416,75 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
 
             {/* Child Information */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Child Information</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-gray-500 text-sm">Full Name</span>
-                  <p className="font-medium">{childInfo.first_name} {childInfo.last_name || ''}</p>
-                </div>
-                <div>
-                  <span className="text-gray-500 text-sm">TLG ID / Enquiry ID</span>
-                  <p className="font-medium text-blue-600">{childInfo.enquiry_id || '-'}</p>
-                </div>
-                <div>
-                  <span className="text-gray-500 text-sm">Date of Birth</span>
-                  <p className="font-medium">{childInfo.dob ? `${formatDate(childInfo.dob)} (${age} years)` : '-'}</p>
-                </div>
-                <div>
-                  <span className="text-gray-500 text-sm">School</span>
-                  <p className="font-medium">{childInfo.school || '-'}</p>
-                </div>
-                <div>
-                  <span className="text-gray-500 text-sm">Interests</span>
-                  <p className="font-medium">{childInfo.interests?.join(', ') || '-'}</p>
-                </div>
-                {childInfo.notes && (
-                  <div className="col-span-2">
-                    <span className="text-gray-500 text-sm">Notes</span>
-                    <p className="font-medium">{childInfo.notes}</p>
+              <div className="flex items-center justify-between mb-4 border-b pb-2">
+                <h3 className="text-lg font-semibold text-gray-900">Child Information</h3>
+                {!isEditing ? (
+                  <button onClick={startEditing} className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    Edit
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <button onClick={() => setIsEditing(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 border border-gray-300 rounded">Cancel</button>
+                    <button onClick={saveEdit} disabled={saving} className="text-sm text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded disabled:opacity-50">
+                      {saving ? 'Saving...' : 'Save'}
+                    </button>
                   </div>
                 )}
               </div>
+              {isEditing ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-gray-500 text-sm block mb-1">First Name</label>
+                    <input type="text" value={editData.first_name} onChange={e => setEditData({...editData, first_name: e.target.value})} className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-gray-500 text-sm block mb-1">Last Name</label>
+                    <input type="text" value={editData.last_name} onChange={e => setEditData({...editData, last_name: e.target.value})} className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-gray-500 text-sm block mb-1">Date of Birth</label>
+                    <input type="date" value={editData.dob} onChange={e => setEditData({...editData, dob: e.target.value})} className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-gray-500 text-sm block mb-1">School</label>
+                    <input type="text" value={editData.school} onChange={e => setEditData({...editData, school: e.target.value})} className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-gray-500 text-sm block mb-1">Notes</label>
+                    <textarea value={editData.notes} onChange={e => setEditData({...editData, notes: e.target.value})} rows={2} className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-gray-500 text-sm">Full Name</span>
+                    <p className="font-medium">{childInfo.first_name} {childInfo.last_name || ''}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-sm">TLG ID / Enquiry ID</span>
+                    <p className="font-medium text-blue-600">{childInfo.enquiry_id || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-sm">Date of Birth</span>
+                    <p className="font-medium">{childInfo.dob ? `${formatDate(childInfo.dob)} (${age} years)` : '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-sm">School</span>
+                    <p className="font-medium">{childInfo.school || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-sm">Interests</span>
+                    <p className="font-medium">{childInfo.interests?.join(', ') || '-'}</p>
+                  </div>
+                  {childInfo.notes && (
+                    <div className="col-span-2">
+                      <span className="text-gray-500 text-sm">Notes</span>
+                      <p className="font-medium">{childInfo.notes}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Parent Information */}

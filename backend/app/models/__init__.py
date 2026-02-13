@@ -20,6 +20,10 @@ from app.models.skill import Skill
 from app.models.skill_progress import SkillProgress
 from app.models.lead_activity import LeadActivity
 from app.models.report_card import ReportCard
+from app.models.activity_category import ActivityCategory
+from app.models.progression_level import ProgressionLevel
+from app.models.weekly_progress import WeeklyProgress
+from app.models.child_trainer_notes import ChildTrainerNotes
 
 __all__ = [
     "Base",
@@ -45,4 +49,8 @@ __all__ = [
     "Skill",
     "SkillProgress",
     "ReportCard",
+    "ActivityCategory",
+    "ProgressionLevel",
+    "WeeklyProgress",
+    "ChildTrainerNotes",
 ]

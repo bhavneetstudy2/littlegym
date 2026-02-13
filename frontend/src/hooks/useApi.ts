@@ -221,17 +221,18 @@ export function useDashboardStats() {
         const centerParam = selectedCenter ? `center_id=${selectedCenter.id}` : '';
 
         // Fetch data from multiple endpoints
-        const [leads, enrollments, sessions] = await Promise.all([
+        const [leads, enrollments, sessions, expiring] = await Promise.all([
           api.get<Lead[]>(`/api/v1/leads?${centerParam}`),
           api.get<Enrollment[]>(`/api/v1/enrollments?status=ACTIVE&${centerParam}`),
           api.get<ClassSession[]>(`/api/v1/attendance/sessions?session_date=${new Date().toISOString().split('T')[0]}&${centerParam}`),
+          api.get<Enrollment[]>(`/api/v1/enrollments/expiring/list?days=30&${centerParam}`),
         ]);
 
         setStats({
           total_leads: leads.length,
           active_enrollments: enrollments.length,
           todays_classes: sessions.length,
-          pending_renewals: 0, // TODO: fix expiring endpoint
+          pending_renewals: expiring.length,
         });
         setError(null);
       } catch (err) {

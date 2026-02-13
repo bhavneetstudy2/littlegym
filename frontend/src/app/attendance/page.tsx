@@ -64,10 +64,11 @@ export default function AttendancePage() {
   const [selectedBatchId, setSelectedBatchId] = useState<number | null>(null);
   const [students, setStudents] = useState<StudentSummary[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  // Optimistic present tracking - seeded from API, updated instantly on mark/undo
+  // Present tracking - seeded from API
   const [presentIds, setPresentIds] = useState<Set<number>>(new Set());
-  // Track children that were just marked in this session for green feedback
-  const [justMarkedIds, setJustMarkedIds] = useState<Set<number>>(new Set());
+  // Selected cards awaiting bulk mark
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [isBulkSaving, setIsBulkSaving] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
@@ -129,7 +130,7 @@ export default function AttendancePage() {
         if (s.is_present_today) alreadyPresent.add(s.child_id);
       });
       setPresentIds(alreadyPresent);
-      setJustMarkedIds(new Set());
+      setSelectedIds(new Set());
     } catch (err: any) {
       setError(err.message || 'Failed to load students');
     } finally {
@@ -142,18 +143,39 @@ export default function AttendancePage() {
       loadStudents(selectedBatchId);
       setSearchQuery('');
       setActiveLetter(null);
+      setSelectedIds(new Set());
     }
   }, [selectedBatchId, selectedCenter, selectedDate, loadStudents]);
 
-  // Mark present - OPTIMISTIC UI, no refetch needed
-  const markPresent = async (childId: number) => {
-    if (!selectedBatchId || !selectedCenter || savingChildId) return;
-    setSavingChildId(childId);
+  // Toggle selection of a student card
+  const toggleSelect = (childId: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(childId)) next.delete(childId);
+      else next.add(childId);
+      return next;
+    });
+  };
+
+  // Select all visible unmarked students (uses unmarkedStudents since filteredStudents computed later)
+  const selectAllVisible = useCallback(() => {
+    const unmarked = students.filter(s => !presentIds.has(s.child_id));
+    setSelectedIds(new Set(unmarked.map(s => s.child_id)));
+  }, [students, presentIds]);
+
+  // Clear selection
+  const clearSelection = () => setSelectedIds(new Set());
+
+  // Bulk mark selected students as present
+  const markSelectedPresent = async () => {
+    if (!selectedBatchId || !selectedCenter || selectedIds.size === 0 || isBulkSaving) return;
+    setIsBulkSaving(true);
     setWarnings([]);
 
-    // Optimistic: immediately move to present + green
-    setPresentIds((prev) => new Set([...prev, childId]));
-    setJustMarkedIds((prev) => new Set([...prev, childId]));
+    const childIds = Array.from(selectedIds);
+
+    // Optimistic: move all selected to present
+    setPresentIds((prev) => new Set([...prev, ...childIds]));
 
     try {
       const results = await api.post<AttendanceResponse[]>(
@@ -161,33 +183,42 @@ export default function AttendancePage() {
         {
           batch_id: selectedBatchId,
           session_date: selectedDate,
-          attendances: [{ child_id: childId, status: 'PRESENT', notes: null }],
+          attendances: childIds.map(id => ({ child_id: id, status: 'PRESENT', notes: null })),
         }
       );
-      const student = students.find((s) => s.child_id === childId);
-      showToast(`${student?.child_name || 'Student'} marked present`);
-      const result = results.find((r) => r.child_id === childId);
-      if (result?.visit_warning) {
-        setWarnings((prev) => [...prev, `${student?.child_name}: ${result.visit_warning}`]);
-      }
+      showToast(`${childIds.length} student${childIds.length > 1 ? 's' : ''} marked present`);
+
+      // Check for warnings
+      const newWarnings: string[] = [];
+      results.forEach((r) => {
+        if (r.visit_warning) {
+          const student = students.find(s => s.child_id === r.child_id);
+          newWarnings.push(`${student?.child_name || 'Student'}: ${r.visit_warning}`);
+        }
+      });
+      if (newWarnings.length > 0) setWarnings(prev => [...prev, ...newWarnings]);
+
+      setSelectedIds(new Set());
     } catch (err: any) {
-      // Rollback optimistic update on failure
-      setPresentIds((prev) => { const next = new Set(prev); next.delete(childId); return next; });
-      setJustMarkedIds((prev) => { const next = new Set(prev); next.delete(childId); return next; });
+      // Rollback
+      setPresentIds((prev) => {
+        const next = new Set(prev);
+        childIds.forEach(id => next.delete(id));
+        return next;
+      });
       showToast(`Failed: ${err.message}`);
     } finally {
-      setSavingChildId(null);
+      setIsBulkSaving(false);
     }
   };
 
-  // Undo / mark absent - OPTIMISTIC UI, no refetch
+  // Undo attendance - deletes record on backend, decrements visits_used
   const undoPresent = async (childId: number) => {
     if (!selectedBatchId || !selectedCenter || savingChildId) return;
     setSavingChildId(childId);
 
     // Optimistic: immediately remove from present
     setPresentIds((prev) => { const next = new Set(prev); next.delete(childId); return next; });
-    setJustMarkedIds((prev) => { const next = new Set(prev); next.delete(childId); return next; });
 
     try {
       await api.post<AttendanceResponse[]>(
@@ -232,7 +263,7 @@ export default function AttendancePage() {
     return letters;
   }, [unmarkedStudents]);
 
-  const isSaved = presentIds.size > 0;
+  const hasPresent = presentIds.size > 0;
 
   // --- RENDER ---
 
@@ -283,7 +314,7 @@ export default function AttendancePage() {
       <div className="flex items-start justify-between mb-5">
         <div>
           <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Attendance</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Tap a student to mark present</p>
+          <p className="text-sm text-gray-500 mt-0.5">Select students, then mark attendance</p>
         </div>
         <div className="flex items-center gap-3">
           <input
@@ -292,10 +323,10 @@ export default function AttendancePage() {
             onChange={(e) => setSelectedDate(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
           />
-          {isSaved && (
+          {hasPresent && (
             <div className="flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-xs font-semibold">
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-              Auto-saved
+              Saved
             </div>
           )}
         </div>
@@ -420,7 +451,45 @@ export default function AttendancePage() {
             ))}
           </div>
 
-          {/* Student cards grid - unmarked */}
+          {/* Selection action bar */}
+          {selectedIds.size > 0 && (
+            <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+              <span className="text-sm font-medium text-blue-800">
+                {selectedIds.size} student{selectedIds.size > 1 ? 's' : ''} selected
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={clearSelection}
+                  className="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Clear
+                </button>
+                <button
+                  onClick={markSelectedPresent}
+                  disabled={isBulkSaving}
+                  className="px-4 py-1.5 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isBulkSaving ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  )}
+                  Mark Attendance
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Select All / Clear link */}
+          {filteredStudents.length > 0 && selectedIds.size === 0 && (
+            <div className="mb-3 flex justify-end">
+              <button onClick={selectAllVisible} className="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                Select All ({unmarkedStudents.length})
+              </button>
+            </div>
+          )}
+
+          {/* Student cards grid - unmarked (tap to select) */}
           {filteredStudents.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-gray-400">
@@ -438,24 +507,29 @@ export default function AttendancePage() {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               {filteredStudents.map((student) => {
-                const isSaving = savingChildId === student.child_id;
                 const initials = getInitials(student.child_name);
                 const color = getAvatarColor(student.child_name);
                 const isLow = student.classes_remaining > 0 && student.classes_remaining <= 3;
+                const isSelected = selectedIds.has(student.child_id);
 
                 return (
                   <button
                     key={student.child_id}
-                    onClick={() => markPresent(student.child_id)}
-                    disabled={isSaving}
-                    className="bg-white rounded-xl border border-gray-200 p-4 text-center hover:border-blue-400 hover:shadow-md active:scale-[0.97] transition-all disabled:opacity-50 group relative"
+                    onClick={() => toggleSelect(student.child_id)}
+                    className={`rounded-xl border p-4 text-center active:scale-[0.97] transition-all group relative ${
+                      isSelected
+                        ? 'bg-blue-50 border-2 border-blue-500 shadow-sm shadow-blue-100'
+                        : 'bg-white border-gray-200 hover:border-blue-400 hover:shadow-md'
+                    }`}
                   >
-                    <div className={`w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold mx-auto mb-2 ${color} group-hover:ring-2 group-hover:ring-blue-300 group-hover:ring-offset-2 transition-all`}>
-                      {isSaving ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        initials
-                      )}
+                    {/* Selection checkmark */}
+                    {isSelected && (
+                      <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center shadow-sm">
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      </div>
+                    )}
+                    <div className={`w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold mx-auto mb-2 ${color} ${isSelected ? 'ring-2 ring-blue-400 ring-offset-2' : 'group-hover:ring-2 group-hover:ring-blue-300 group-hover:ring-offset-2'} transition-all`}>
+                      {initials}
                     </div>
                     <div className="text-sm font-medium text-gray-900 truncate">{student.child_name}</div>
                     <div className="text-xs text-gray-400 mt-0.5">#{student.enrollment_id}</div>
@@ -489,15 +563,10 @@ export default function AttendancePage() {
                   const isSaving = savingChildId === student.child_id;
                   const initials = getInitials(student.child_name);
                   const color = getAvatarColor(student.child_name);
-                  const wasJustMarked = justMarkedIds.has(student.child_id);
                   return (
                     <div
                       key={student.child_id}
-                      className={`rounded-xl p-4 text-center transition-all relative ${
-                        wasJustMarked
-                          ? 'bg-green-50 border-2 border-green-500 shadow-sm shadow-green-200'
-                          : 'bg-green-50 border border-green-200'
-                      }`}
+                      className="rounded-xl p-4 text-center transition-all relative bg-green-50 border border-green-200"
                     >
                       {/* Green checkmark badge */}
                       <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shadow-sm">
