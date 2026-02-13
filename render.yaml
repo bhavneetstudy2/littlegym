@@ -1,0 +1,30 @@
+services:
+  # Backend - FastAPI
+  - type: web
+    name: littlegym-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: PORT
+        value: "8000"
+
+  # Frontend - Next.js
+  - type: web
+    name: littlegym-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: free
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
+      - key: PORT
+        value: "3000"
