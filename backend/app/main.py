@@ -17,7 +17,7 @@ app = FastAPI(
 # CORS middleware - origins from settings (configurable via ALLOWED_ORIGINS env var)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=settings.allowed_origins_list,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
