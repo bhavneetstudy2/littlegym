@@ -37,7 +37,9 @@ export default function EditChildModal({ child, onClose, onSuccess }: EditChildM
       if (formData.first_name.trim()) payload.first_name = formData.first_name.trim();
       if (formData.last_name.trim()) payload.last_name = formData.last_name.trim();
       if (formData.dob) payload.dob = formData.dob;
-      if (formData.age_years) payload.age_years = parseInt(formData.age_years.toString());
+      if (formData.age_years !== '' && formData.age_years !== null && formData.age_years !== undefined) {
+        payload.age_years = parseInt(formData.age_years.toString());
+      }
       if (formData.school.trim()) payload.school = formData.school.trim();
       if (formData.notes.trim()) payload.notes = formData.notes.trim();
 
