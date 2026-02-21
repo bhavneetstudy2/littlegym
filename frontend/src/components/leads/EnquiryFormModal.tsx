@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import { EnquiryFormData, LeadSource, PARENT_EXPECTATIONS } from '@/types/leads';
+import DateInput from '@/components/ui/DateInput';
+import { getTodayISO } from '@/lib/utils';
 
 interface EnquiryFormModalProps {
   onClose: () => void;
@@ -193,15 +195,12 @@ export default function EnquiryFormModal({ onClose, onSuccess, centerId }: Enqui
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Date of Birth
-                  </label>
-                  <input
-                    type="date"
+                  <DateInput
+                    label="Date of Birth"
                     value={formData.child_dob || ''}
-                    onChange={(e) => handleDobChange(e.target.value)}
-                    max={new Date().toISOString().split('T')[0]}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={handleDobChange}
+                    max={getTodayISO()}
+                    placeholder="dd/mm/yyyy"
                   />
                 </div>
                 <div>

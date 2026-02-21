@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import DateInput from '@/components/ui/DateInput';
+import { getTodayISO } from '@/lib/utils';
 import { useCenterContext } from '@/hooks/useCenterContext';
 
 interface Batch {
@@ -261,21 +263,21 @@ export default function ConvertToEnrollmentModal({
             {/* Start Date + End Date */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                <input
-                  type="date"
+                <DateInput
+                  label="Start Date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  onChange={setStartDate}
+                  min={getTodayISO()}
+                  required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                <input
-                  type="date"
+                <DateInput
+                  label="End Date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  onChange={setEndDate}
+                  min={startDate || getTodayISO()}
+                  required
                 />
               </div>
             </div>
