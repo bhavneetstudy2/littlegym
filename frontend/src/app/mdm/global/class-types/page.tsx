@@ -122,6 +122,7 @@ export default function ClassTypesPage() {
     {
       key: 'name',
       label: 'Class Type',
+      sortable: true,
       render: (row) => (
         <div>
           <div className="font-semibold text-gray-900">{row.name}</div>
@@ -130,8 +131,10 @@ export default function ClassTypesPage() {
       ),
     },
     {
-      key: 'age_range',
+      key: 'age_min',
       label: 'Age Range',
+      sortable: true,
+      sortKey: 'age_min',
       render: (row) => (
         <span className="text-gray-700">
           {row.age_min} - {row.age_max} years
@@ -139,13 +142,15 @@ export default function ClassTypesPage() {
       ),
     },
     {
-      key: 'duration',
+      key: 'duration_minutes',
       label: 'Duration',
+      sortable: true,
       render: (row) => <span className="text-gray-700">{row.duration_minutes} mins</span>,
     },
     {
       key: 'active',
       label: 'Status',
+      sortable: true,
       render: (row) =>
         row.active ? (
           <span className="px-2.5 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
@@ -204,6 +209,10 @@ export default function ClassTypesPage() {
             loading={loading}
             onRowClick={handleEdit}
             emptyMessage="No class types found"
+            searchable={true}
+            searchPlaceholder="Search class types by name..."
+            defaultSortKey="name"
+            defaultSortDirection="asc"
           />
         )}
 

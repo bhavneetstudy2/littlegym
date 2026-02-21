@@ -767,6 +767,32 @@ class LeadService:
         return query.order_by(FollowUp.scheduled_date).offset(skip).limit(limit).all()
 
     @staticmethod
+    def get_status_counts(db: Session, center_id: Optional[int]) -> dict:
+        """Get count of leads by status"""
+        query = db.query(
+            Lead.status,
+            func.count(Lead.id).label('count')
+        ).filter(
+            Lead.is_archived == False
+        )
+
+        if center_id is not None:
+            query = query.filter(Lead.center_id == center_id)
+
+        query = query.group_by(Lead.status)
+        results = query.all()
+
+        # Convert to dict with status as key
+        counts = {status.value: count for status, count in results}
+
+        # Add zero counts for statuses with no leads
+        for status in LeadStatus:
+            if status.value not in counts:
+                counts[status.value] = 0
+
+        return counts
+
+    @staticmethod
     def get_lead_with_details(db: Session, lead_id: int) -> Optional[Lead]:
         """Get lead with all related data"""
         return db.query(Lead).options(

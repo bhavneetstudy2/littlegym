@@ -44,6 +44,9 @@ export default function EnhancedLeadsPage() {
   const [totalLeads, setTotalLeads] = useState(0);
   const [pageSize] = useState(50);
 
+  // Status counts (these remain constant regardless of filters)
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+
   // Modal states
   const [showEnquiryModal, setShowEnquiryModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -69,11 +72,35 @@ export default function EnhancedLeadsPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Fetch status counts only when center changes
+  useEffect(() => {
+    if (selectedCenter) {
+      fetchStatusCounts();
+    }
+  }, [selectedCenter]);
+
+  // Fetch leads when filters change
   useEffect(() => {
     if (selectedCenter) {
       fetchLeads();
     }
   }, [selectedCenter, currentPage, selectedStatus, debouncedSearch]);
+
+  const fetchStatusCounts = async () => {
+    if (!selectedCenter?.id) return;
+
+    try {
+      const params = new URLSearchParams({
+        center_id: selectedCenter.id.toString(),
+      });
+
+      const counts = await api.get<Record<string, number>>(`/api/v1/leads/stats/status-counts?${params.toString()}`);
+      setStatusCounts(counts);
+    } catch (err) {
+      console.error('Failed to fetch status counts:', err);
+      // Don't set error state, just log it
+    }
+  };
 
   const fetchLeads = async () => {
     if (!selectedCenter?.id) {
@@ -168,6 +195,7 @@ export default function EnhancedLeadsPage() {
         notes: 'IV marked as completed',
       });
       fetchLeads();
+      fetchStatusCounts();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to update status');
     } finally {
@@ -184,6 +212,7 @@ export default function EnhancedLeadsPage() {
         reason: 'Not Interested',
       });
       fetchLeads();
+      fetchStatusCounts();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to close lead');
     } finally {
@@ -200,6 +229,7 @@ export default function EnhancedLeadsPage() {
       setShowDeleteConfirm(false);
       setSelectedLead(null);
       fetchLeads();
+      fetchStatusCounts();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to delete lead');
     } finally {
@@ -209,6 +239,7 @@ export default function EnhancedLeadsPage() {
 
   const handleSuccess = () => {
     fetchLeads();
+    fetchStatusCounts(); // Refresh counts when status changes
     setShowEnquiryModal(false);
     setShowDetailModal(false);
     setShowScheduleIVModal(false);
@@ -365,6 +396,7 @@ export default function EnhancedLeadsPage() {
 
             {Object.values(STATUS_CONFIGS).map((config) => {
               const isActive = selectedStatus === config.value;
+              const count = statusCounts[config.value] || 0;
               return (
                 <button
                   key={config.value}
@@ -378,10 +410,10 @@ export default function EnhancedLeadsPage() {
                       : 'border-gray-200 hover:border-gray-300 bg-white'
                   }`}
                 >
-                  <div className={`text-xs font-semibold px-2 py-1 rounded ${config.color}`}>
+                  <div className="text-2xl font-bold text-gray-900">{count}</div>
+                  <div className={`text-xs font-semibold px-2 py-1 rounded mt-1 ${config.color}`}>
                     {config.label}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">Click to filter</div>
                 </button>
               );
             })}

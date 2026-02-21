@@ -106,6 +106,27 @@ def get_leads_paginated(
     )
 
 
+# Status counts endpoint - MUST be before /{lead_id}
+@router.get("/stats/status-counts")
+def get_status_counts(
+    center_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get count of leads by status.
+    Returns a dictionary with status as key and count as value.
+    """
+    # Super admin can filter by center_id, regular users only see their center
+    if current_user.role == UserRole.SUPER_ADMIN:
+        effective_center_id = center_id
+    else:
+        effective_center_id = current_user.center_id
+
+    counts = LeadService.get_status_counts(db=db, center_id=effective_center_id)
+    return counts
+
+
 # Intro visits list endpoint - MUST be before /{lead_id}
 @router.get("/intro-visits", response_model=List[IntroVisitResponse])
 def get_intro_visits(
