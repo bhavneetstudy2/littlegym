@@ -328,6 +328,7 @@ class LeadService:
             db.add(child)
             db.flush()
 
+            # Create parent 1 (required)
             existing_parent = db.query(Parent).filter(
                 Parent.center_id == center_id,
                 Parent.phone == enquiry_data.contact_number,
@@ -358,6 +359,39 @@ class LeadService:
                 updated_by_id=created_by_id,
             )
             db.add(family_link)
+
+            # Create parent 2 (optional)
+            if enquiry_data.parent2_name and enquiry_data.parent2_contact_number:
+                existing_parent2 = db.query(Parent).filter(
+                    Parent.center_id == center_id,
+                    Parent.phone == enquiry_data.parent2_contact_number,
+                    Parent.is_archived == False
+                ).first()
+
+                if existing_parent2:
+                    parent2 = existing_parent2
+                else:
+                    parent2 = Parent(
+                        center_id=center_id,
+                        name=enquiry_data.parent2_name,
+                        phone=enquiry_data.parent2_contact_number,
+                        email=enquiry_data.parent2_email,
+                        created_by_id=created_by_id,
+                        updated_by_id=created_by_id,
+                    )
+                    db.add(parent2)
+                    db.flush()
+
+                family_link2 = FamilyLink(
+                    center_id=center_id,
+                    child_id=child.id,
+                    parent_id=parent2.id,
+                    relationship_type="parent",
+                    is_primary_contact=False,
+                    created_by_id=created_by_id,
+                    updated_by_id=created_by_id,
+                )
+                db.add(family_link2)
 
             lead = Lead(
                 center_id=center_id,

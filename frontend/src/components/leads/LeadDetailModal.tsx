@@ -171,20 +171,28 @@ export default function LeadDetailModal({
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Child Information</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
+                    <span className="text-gray-500 text-sm">Enquiry ID</span>
+                    <p className="font-medium text-blue-600">{child?.enquiry_id || 'N/A'}</p>
+                  </div>
+                  <div>
                     <span className="text-gray-500 text-sm">Name</span>
                     <p className="font-medium">{child?.first_name} {child?.last_name || ''}</p>
                   </div>
                   <div>
+                    <span className="text-gray-500 text-sm">Age</span>
+                    <p className="font-medium">{age ? `${age} years` : 'N/A'}</p>
+                  </div>
+                  <div>
                     <span className="text-gray-500 text-sm">Date of Birth</span>
-                    <p className="font-medium">{child?.dob ? `${formatDate(child.dob)} (${age} years)` : '-'}</p>
+                    <p className="font-medium">{child?.dob ? formatDate(child.dob) : 'N/A'}</p>
                   </div>
                   <div>
                     <span className="text-gray-500 text-sm">School</span>
-                    <p className="font-medium">{child?.school || lead.school || '-'}</p>
+                    <p className="font-medium">{child?.school || lead.school || 'N/A'}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500 text-sm">Enquiry ID</span>
-                    <p className="font-medium text-blue-600">{child?.enquiry_id || '-'}</p>
+                    <span className="text-gray-500 text-sm">Source</span>
+                    <p className="font-medium">{lead.source || 'N/A'}</p>
                   </div>
                 </div>
               </div>

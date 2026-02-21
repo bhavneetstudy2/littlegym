@@ -23,10 +23,15 @@ class EnquiryFormCreate(BaseModel):
     age: Optional[int] = Field(None, ge=0, le=18)
     gender: Optional[str] = Field(None, pattern="^(Boy|Girl|Other)$")
 
-    # Parent information
+    # Parent 1 information (required)
     parent_name: str = Field(..., min_length=1, max_length=200)
     contact_number: str = Field(..., pattern=r"^\+?[\d\s\-()]+$")
     email: Optional[str] = None
+
+    # Parent 2 information (optional)
+    parent2_name: Optional[str] = Field(None, max_length=200)
+    parent2_contact_number: Optional[str] = Field(None, pattern=r"^\+?[\d\s\-()]+$")
+    parent2_email: Optional[str] = None
 
     # Discovery details
     school: Optional[str] = Field(None, max_length=200)

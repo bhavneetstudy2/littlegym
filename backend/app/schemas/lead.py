@@ -44,6 +44,7 @@ class ChildResponse(ChildBase):
 
     id: int
     center_id: int
+    age: Optional[int] = None  # Calculated from DOB
     created_at: datetime
     updated_at: datetime
 

@@ -44,6 +44,9 @@ export default function EnquiryFormModal({ onClose, onSuccess, centerId }: Enqui
     parent_name: '',
     contact_number: '',
     email: '',
+    parent2_name: '',
+    parent2_contact_number: '',
+    parent2_email: '',
     school: '',
     source: undefined,
     parent_expectations: [],
@@ -110,8 +113,16 @@ export default function EnquiryFormModal({ onClose, onSuccess, centerId }: Enqui
       return;
     }
     if (!validatePhone(formData.contact_number)) {
-      setError('Please enter a valid 10-digit Indian mobile number');
+      setError('Please enter a valid 10-digit Indian mobile number (Parent 1)');
       return;
+    }
+
+    // Validate parent 2 phone if provided
+    if (formData.parent2_contact_number && formData.parent2_contact_number.trim()) {
+      if (!validatePhone(formData.parent2_contact_number)) {
+        setError('Please enter a valid 10-digit Indian mobile number (Parent 2)');
+        return;
+      }
     }
 
     setLoading(true);
@@ -128,6 +139,9 @@ export default function EnquiryFormModal({ onClose, onSuccess, centerId }: Enqui
         parent_name: formData.parent_name,
         contact_number: formData.contact_number,
         email: formData.email || null,
+        parent2_name: formData.parent2_name || null,
+        parent2_contact_number: formData.parent2_contact_number || null,
+        parent2_email: formData.parent2_email || null,
         school: formData.school || null,
         source: formData.source || null,
         parent_expectations: formData.parent_expectations && formData.parent_expectations.length > 0
@@ -165,7 +179,7 @@ export default function EnquiryFormModal({ onClose, onSuccess, centerId }: Enqui
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-auto p-6">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-auto p-6" autoComplete="off">
           <div className="space-y-6">
             {/* Child Information */}
             <div className="bg-blue-50 rounded-lg p-4">
@@ -244,9 +258,9 @@ export default function EnquiryFormModal({ onClose, onSuccess, centerId }: Enqui
               </div>
             </div>
 
-            {/* Parent Information */}
+            {/* Parent 1 Information */}
             <div className="bg-green-50 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Parent Information</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Parent 1 Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -282,6 +296,50 @@ export default function EnquiryFormModal({ onClose, onSuccess, centerId }: Enqui
                     type="email"
                     value={formData.email || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Parent 2 Information (Optional) */}
+            <div className="bg-green-50 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Parent 2 Information <span className="text-sm text-gray-500 font-normal">(Optional)</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Parent Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.parent2_name || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, parent2_name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Contact Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.parent2_contact_number || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, parent2_contact_number: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                    pattern="[6-9]\d{9}"
+                    placeholder="10-digit mobile number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.parent2_email || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, parent2_email: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
                 </div>

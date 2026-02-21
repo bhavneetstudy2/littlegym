@@ -16,6 +16,7 @@ export interface Child {
   first_name: string;
   last_name: string | null;
   dob: string | null;
+  age?: number | null;
   school: string | null;
   interests: string[] | null;
   notes: string | null;

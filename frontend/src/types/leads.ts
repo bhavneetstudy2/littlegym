@@ -36,6 +36,7 @@ export interface Child {
   first_name: string;
   last_name?: string;
   dob?: string;
+  age?: number;
   school?: string;
   interests?: string[];
   notes?: string;
@@ -125,6 +126,9 @@ export interface EnquiryFormData {
   parent_name: string;
   contact_number: string;
   email?: string;
+  parent2_name?: string;
+  parent2_contact_number?: string;
+  parent2_email?: string;
   school?: string;
   source?: LeadSource;
   parent_expectations?: string[];
