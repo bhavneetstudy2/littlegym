@@ -9,18 +9,23 @@ import re
 def get_ipv4_database_url(url: str) -> str:
     """Resolve hostname in DATABASE_URL to IPv4 address to avoid IPv6 issues on Render."""
     # Extract hostname from connection string
-    match = re.search(r'@([^:/@]+)', url)
+    match = re.search(r'@([^:/@]+):', url)
     if match:
         hostname = match.group(1)
         try:
-            # Force IPv4 resolution
-            ipv4 = socket.getaddrinfo(hostname, None, socket.AF_INET)[0][4][0]
-            # Replace hostname with IPv4 in URL, but keep original host for SSL
-            url_with_ip = url.replace(f'@{hostname}', f'@{ipv4}')
-            print(f"Resolved {hostname} to IPv4: {ipv4}")
+            # Force IPv4 resolution only (AF_INET excludes IPv6)
+            addr_info = socket.getaddrinfo(
+                hostname, None,
+                socket.AF_INET,  # IPv4 only
+                socket.SOCK_STREAM
+            )
+            ipv4 = addr_info[0][4][0]
+            # Replace hostname with IPv4 address
+            url_with_ip = url.replace(f'@{hostname}:', f'@{ipv4}:')
+            print(f"[DB] Resolved {hostname} to IPv4: {ipv4}")
             return url_with_ip
         except Exception as e:
-            print(f"Failed to resolve {hostname} to IPv4: {e}, using original URL")
+            print(f"[DB] Failed to resolve {hostname} to IPv4: {e}, using original URL")
     return url
 
 database_url = get_ipv4_database_url(settings.DATABASE_URL)
