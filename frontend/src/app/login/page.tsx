@@ -50,9 +50,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+      <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
+          <div className="w-12 h-1 bg-blue-600 rounded-full mx-auto mb-6" />
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             The Little Gym CRM
           </h1>
@@ -63,7 +64,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email Field */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="email" className="input-label">
               Email Address
             </label>
             <input
@@ -72,14 +73,14 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+              className="input"
               placeholder="admin@example.com"
             />
           </div>
 
           {/* Password Field */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="password" className="input-label">
               Password
             </label>
             <input
@@ -88,14 +89,14 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+              className="input"
               placeholder="Enter your password"
             />
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            <div className="alert-error">
               {error}
             </div>
           )}
@@ -104,7 +105,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
+            className="btn-primary btn-lg w-full"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
@@ -116,9 +117,6 @@ export default function LoginPage() {
             <a href="/" className="text-blue-600 hover:text-blue-700 font-medium">
               ← Back to Home
             </a>
-          </p>
-          <p className="text-xs text-gray-500 mt-4">
-            Phase 1 Complete - Authentication will be implemented in Phase 2
           </p>
         </div>
       </div>

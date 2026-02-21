@@ -2,8 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useStudentLookup } from '@/contexts/StudentLookupContext';
+import {
+  Building2, Database, LayoutDashboard, Users, ClipboardCheck,
+  CalendarCheck, TrendingUp, FileText, RefreshCw, Settings,
+  Upload, Search, LogOut,
+} from 'lucide-react';
 
 interface User {
   id: number;
@@ -45,117 +50,17 @@ export default function Sidebar() {
   };
 
   const menuItems = [
-    {
-      name: 'Centers',
-      href: '/centers',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-        </svg>
-      ),
-      roles: ['SUPER_ADMIN'],
-    },
-    {
-      name: 'Master Data',
-      href: '/mdm',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-        </svg>
-      ),
-      roles: ['SUPER_ADMIN', 'CENTER_ADMIN'],
-    },
-    {
-      name: 'Dashboard',
-      href: '/dashboard',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-      ),
-      roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'COUNSELOR'],
-    },
-    {
-      name: 'Leads',
-      href: '/leads',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-        </svg>
-      ),
-      roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'COUNSELOR'],
-    },
-    {
-      name: 'Enrollments',
-      href: '/enrollments',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'COUNSELOR'],
-    },
-    {
-      name: 'Attendance',
-      href: '/attendance',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-        </svg>
-      ),
-      roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'CENTER_MANAGER', 'TRAINER'],
-    },
-    {
-      name: 'Progress',
-      href: '/progress',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-        </svg>
-      ),
-      roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'CENTER_MANAGER', 'TRAINER'],
-    },
-    {
-      name: 'Report Cards',
-      href: '/report-cards',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
-      roles: ['SUPER_ADMIN', 'CENTER_ADMIN'],
-    },
-    {
-      name: 'Renewals',
-      href: '/renewals',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'COUNSELOR'],
-    },
-    {
-      name: 'Admin',
-      href: '/admin',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      ),
-      roles: ['SUPER_ADMIN', 'CENTER_ADMIN'],
-    },
-    {
-      name: 'Import Data',
-      href: '/import',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-        </svg>
-      ),
-      roles: ['SUPER_ADMIN', 'CENTER_ADMIN'],
-    },
+    { name: 'Centers', href: '/centers', icon: Building2, roles: ['SUPER_ADMIN'] },
+    { name: 'Master Data', href: '/mdm', icon: Database, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'] },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'COUNSELOR'] },
+    { name: 'Leads', href: '/leads', icon: Users, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'COUNSELOR'] },
+    { name: 'Enrollments', href: '/enrollments', icon: ClipboardCheck, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'COUNSELOR'] },
+    { name: 'Attendance', href: '/attendance', icon: CalendarCheck, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'CENTER_MANAGER', 'TRAINER'] },
+    { name: 'Progress', href: '/progress', icon: TrendingUp, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'CENTER_MANAGER', 'TRAINER'] },
+    { name: 'Report Cards', href: '/report-cards', icon: FileText, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'] },
+    { name: 'Renewals', href: '/renewals', icon: RefreshCw, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'COUNSELOR'] },
+    { name: 'Admin', href: '/admin', icon: Settings, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'] },
+    { name: 'Import Data', href: '/import', icon: Upload, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'] },
   ];
 
   const filteredMenuItems = menuItems.filter(item =>
@@ -163,44 +68,43 @@ export default function Sidebar() {
   );
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 text-white w-64">
+    <div className="flex flex-col h-full bg-gradient-to-b from-gray-900 to-gray-950 text-white w-60">
       {/* Logo */}
-      <div className="p-4 border-b border-gray-800">
-        <h1 className="text-xl font-bold">Little Gym CRM</h1>
+      <div className="px-5 py-5 border-b border-white/10">
+        <h1 className="text-lg font-bold tracking-tight">Little Gym CRM</h1>
         {user && (
-          <p className="text-sm text-gray-400 mt-1">{user.role.replace('_', ' ')}</p>
+          <p className="text-xs text-gray-400 mt-1 font-medium">{user.role.replace(/_/g, ' ')}</p>
         )}
       </div>
 
       {/* Student Search */}
-      <div className="px-3 py-2">
+      <div className="px-3 py-3">
         <button
           onClick={openLookup}
-          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-400 bg-gray-800 rounded-lg hover:bg-gray-700 hover:text-white transition"
+          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-400 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:text-white transition-colors"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          Search students...
-          <kbd className="ml-auto text-xs text-gray-500 bg-gray-700 px-1.5 py-0.5 rounded">Ctrl+K</kbd>
+          <Search className="w-4 h-4" />
+          <span className="text-xs">Search students...</span>
+          <kbd className="ml-auto text-[10px] text-gray-500 bg-white/10 px-1.5 py-0.5 rounded font-mono">Ctrl+K</kbd>
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4">
+      <nav className="flex-1 overflow-y-auto py-2 px-2">
         {filteredMenuItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const Icon = item.icon;
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center px-4 py-3 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg my-0.5 transition-colors ${
                 isActive
-                  ? 'bg-gray-800 text-white border-l-4 border-blue-500'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  ? 'bg-white/10 text-white'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <span className="mr-3">{item.icon}</span>
+              <Icon className="w-[18px] h-[18px] flex-shrink-0" />
               {item.name}
             </Link>
           );
@@ -209,17 +113,23 @@ export default function Sidebar() {
 
       {/* User Info & Logout */}
       {user && (
-        <div className="p-4 border-t border-gray-800">
-          <div className="text-sm mb-3">
-            <p className="font-medium truncate">{user.name}</p>
-            <p className="text-gray-400 text-xs truncate">{user.email}</p>
+        <div className="p-4 border-t border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{user.name}</p>
+              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={handleLogout}
-            className="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm font-medium"
-          >
-            Logout
-          </button>
         </div>
       )}
     </div>

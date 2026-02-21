@@ -99,7 +99,7 @@ export default function ProgressPage() {
       setLoadingBatches(true);
       try {
         const [batchData, currData] = await Promise.all([
-          api.get<Batch[]>(`/api/v1/batches?${centerParam}`),
+          api.get<Batch[]>(`/api/v1/enrollments/batches?${centerParam}`),
           api.get<Curriculum[]>('/api/v1/curriculum'),
         ]);
         setBatches(batchData.filter(b => b.active));

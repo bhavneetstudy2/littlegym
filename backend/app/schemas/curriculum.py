@@ -13,6 +13,7 @@ class CurriculumBase(BaseModel):
     description: Optional[str] = None
     is_global: bool = False
     active: bool = True
+    curriculum_type: str = "GYMNASTICS"
 
 
 class CurriculumCreate(CurriculumBase):

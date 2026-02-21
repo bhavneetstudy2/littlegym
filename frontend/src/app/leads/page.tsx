@@ -13,6 +13,8 @@ import type {
   PaginatedLeadsResponse,
 } from '@/types/leads';
 import { STATUS_CONFIGS } from '@/types/leads';
+import PageHeader from '@/components/ui/PageHeader';
+import LoadingState from '@/components/ui/LoadingState';
 import EnquiryFormModal from '@/components/leads/EnquiryFormModal';
 import LeadDetailModal from '@/components/leads/LeadDetailModal';
 import ScheduleIVModal from '@/components/leads/ScheduleIVModal';
@@ -317,7 +319,7 @@ export default function EnhancedLeadsPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-500 mb-4">Please select a center first</p>
-          <a href="/dashboard" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 inline-block">
+          <a href="/dashboard" className="btn-primary inline-block">
             Go to Dashboard
           </a>
         </div>
@@ -326,24 +328,24 @@ export default function EnhancedLeadsPage() {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="page-container">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Leads Management</h1>
-          <p className="text-gray-600 mt-1">Track leads from enquiry through conversion</p>
-        </div>
-        <button
-          onClick={() => setShowEnquiryModal(true)}
-          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium shadow-sm"
-        >
-          + New Enquiry
-        </button>
-      </div>
+      <PageHeader
+        title="Leads Management"
+        subtitle="Track leads from enquiry through conversion"
+        action={
+          <button
+            onClick={() => setShowEnquiryModal(true)}
+            className="btn-success"
+          >
+            + New Enquiry
+          </button>
+        }
+      />
 
       {/* Status Filter Cards */}
       <div className="mb-6">
-        <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="card-static card-body">
           <h3 className="text-sm font-medium text-gray-700 mb-3">Filter by Status</h3>
           <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
             <button
@@ -389,30 +391,27 @@ export default function EnhancedLeadsPage() {
 
       {/* Search Bar */}
       <div className="mb-6">
-        <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="card-static card-body">
           <input
             type="text"
             placeholder="Search by child name, parent name, or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="input w-full"
           />
         </div>
       </div>
 
       {/* Leads Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="table-wrapper">
         {loading ? (
-          <div className="p-12 text-center text-gray-500">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            Loading leads...
-          </div>
+          <LoadingState message="Loading leads..." />
         ) : error ? (
           <div className="p-12 text-center">
             <div className="text-red-500 mb-4">Error: {error}</div>
             <button
               onClick={fetchLeads}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="btn-primary"
             >
               Retry
             </button>
@@ -425,7 +424,7 @@ export default function EnhancedLeadsPage() {
             {selectedStatus === 'ALL' && (
               <button
                 onClick={() => setShowEnquiryModal(true)}
-                className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                className="mt-4 btn-success"
               >
                 Create your first lead
               </button>
@@ -436,54 +435,54 @@ export default function EnhancedLeadsPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="table-header-cell">
                     Enquiry ID
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="table-header-cell">
                     Child Name
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="table-header-cell">
                     Source
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="table-header-cell">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="table-header-cell">
                     Created
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="table-header-cell">
                     Quick Actions
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="table-header-cell">
                     {/* View / Delete */}
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {leads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 whitespace-nowrap">
+                  <tr key={lead.id} className="table-row">
+                    <td className="table-cell whitespace-nowrap">
                       <span className="text-sm font-mono font-medium text-gray-900">
                         {(lead as any).enquiry_id || lead.child?.enquiry_id || 'N/A'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="table-cell whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {getLeadName(lead)}
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                    <td className="table-cell whitespace-nowrap text-sm text-gray-500">
                       {lead.source?.replace(/_/g, ' ') || '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="table-cell whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-semibold rounded-full ${STATUS_CONFIGS[lead.status]?.color || 'bg-gray-100 text-gray-800'}`}>
                         {STATUS_CONFIGS[lead.status]?.label || lead.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                    <td className="table-cell whitespace-nowrap text-sm text-gray-500">
                       {new Date(lead.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="table-cell">
                       <div className="flex flex-wrap gap-1">
                         {actionLoading === lead.id ? (
                           <span className="text-xs text-gray-400">Updating...</span>
@@ -492,7 +491,7 @@ export default function EnhancedLeadsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="table-cell whitespace-nowrap">
                       <div className="flex gap-2 items-center">
                         <button
                           onClick={() => handleViewLead(lead)}
@@ -534,22 +533,14 @@ export default function EnhancedLeadsPage() {
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}
-                className={`px-3 py-2 text-sm font-medium rounded-lg ${
-                  currentPage === 1
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                }`}
+                className="btn-ghost disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 First
               </button>
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className={`px-3 py-2 text-sm font-medium rounded-lg ${
-                  currentPage === 1
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                }`}
+                className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Prev
               </button>
@@ -559,22 +550,14 @@ export default function EnhancedLeadsPage() {
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
-                className={`px-3 py-2 text-sm font-medium rounded-lg ${
-                  currentPage === totalPages
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                }`}
+                className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next
               </button>
               <button
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages}
-                className={`px-3 py-2 text-sm font-medium rounded-lg ${
-                  currentPage === totalPages
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                }`}
+                className="btn-ghost disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Last
               </button>
@@ -585,9 +568,9 @@ export default function EnhancedLeadsPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && selectedLead && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Lead</h3>
+        <div className="modal-backdrop">
+          <div className="modal-panel max-w-md w-full p-6">
+            <h3 className="modal-header">Delete Lead</h3>
             <p className="text-gray-600 mb-1">
               Are you sure you want to permanently delete this lead?
             </p>
@@ -603,14 +586,14 @@ export default function EnhancedLeadsPage() {
                   setShowDeleteConfirm(false);
                   setSelectedLead(null);
                 }}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100"
+                className="btn-secondary"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteLead}
                 disabled={actionLoading === selectedLead.id}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                className="btn-danger disabled:opacity-50"
               >
                 {actionLoading === selectedLead.id ? 'Deleting...' : 'Delete Permanently'}
               </button>

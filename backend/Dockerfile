@@ -18,5 +18,5 @@ COPY . .
 # Render uses PORT env var
 ENV PORT=8000
 
-# Run migrations and start server (no --reload in production)
-CMD sh -c "alembic upgrade head 2>/dev/null; uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"
+# Run migrations (allow failure) and start server
+CMD sh -c "alembic upgrade head || echo 'Migration skipped'; exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"

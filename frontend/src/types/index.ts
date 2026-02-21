@@ -156,6 +156,7 @@ export interface Curriculum {
   center_id: number | null;
   is_global: boolean;
   active: boolean;
+  curriculum_type: 'GYMNASTICS' | 'GRADE_SCHOOL';
   created_at: string;
   updated_at: string;
 }

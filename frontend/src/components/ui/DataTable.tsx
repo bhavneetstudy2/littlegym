@@ -26,12 +26,15 @@ export default function DataTable<T extends { id: number | string }>({
 }: DataTableProps<T>) {
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-8 text-center">
-          <div className="animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
-          </div>
+      <div className="table-wrapper">
+        <div className="p-8 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex gap-4">
+              <div className="skeleton h-4 w-1/4" />
+              <div className="skeleton h-4 w-1/3" />
+              <div className="skeleton h-4 w-1/5" />
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -39,8 +42,8 @@ export default function DataTable<T extends { id: number | string }>({
 
   if (data.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-8 text-center text-gray-500">
+      <div className="table-wrapper">
+        <div className="p-12 text-center text-gray-500 text-sm">
           {emptyMessage}
         </div>
       </div>
@@ -48,32 +51,32 @@ export default function DataTable<T extends { id: number | string }>({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className="table-wrapper">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50 sticky top-0">
+        <table className="min-w-full">
+          <thead>
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${column.className || ''}`}
+                  className={`table-header-cell ${column.className || ''}`}
                 >
                   {column.label}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody>
             {data.map((row) => (
               <tr
                 key={row.id}
                 onClick={() => onRowClick?.(row)}
-                className={`${onRowClick ? 'cursor-pointer hover:bg-gray-50 transition' : ''}`}
+                className={`table-row ${onRowClick ? 'cursor-pointer' : ''}`}
               >
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={`px-6 py-4 whitespace-nowrap text-sm ${column.className || ''}`}
+                    className={`table-cell whitespace-nowrap ${column.className || ''}`}
                   >
                     {column.render ? column.render(row) : (row as any)[column.key]}
                   </td>
