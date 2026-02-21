@@ -72,16 +72,16 @@ export default function EditChildModal({ child, onClose, onSuccess }: EditChildM
           )}
 
           <div className="space-y-4">
-            {/* Enquiry ID */}
+            {/* Enquiry ID - Read Only */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Enquiry ID
+                Enquiry ID <span className="text-gray-400 text-xs">(Read Only)</span>
               </label>
               <input
                 type="text"
                 value={formData.enquiry_id}
-                onChange={(e) => setFormData({ ...formData, enquiry_id: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
                 placeholder="TLGC####"
               />
             </div>
@@ -170,26 +170,26 @@ export default function EditChildModal({ child, onClose, onSuccess }: EditChildM
               />
             </div>
           </div>
-        </form>
 
-        {/* Footer */}
-        <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition"
-            disabled={loading}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
+          {/* Footer - Inside Form */}
+          <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t -mx-6 -mb-6 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
