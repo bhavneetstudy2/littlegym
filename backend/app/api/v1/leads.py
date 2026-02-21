@@ -15,6 +15,8 @@ from app.schemas.lead import (
     IntroVisitResponse,
     ChildUpdate,
     ChildResponse,
+    ParentUpdate,
+    ParentResponse,
 )
 from app.schemas.lead_enhanced import (
     EnquiryFormCreate,
@@ -852,6 +854,39 @@ def update_child(
         db.refresh(child)
 
         return child
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.patch("/parent/{parent_id}", response_model=ParentResponse)
+def update_parent(
+    parent_id: int,
+    parent_data: ParentUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+):
+    """Update parent information including name, phone, email, notes"""
+    parent = db.query(Parent).filter(Parent.id == parent_id).first()
+    if not parent:
+        raise HTTPException(status_code=404, detail="Parent not found")
+
+    # Check tenant access
+    if current_user.role != UserRole.SUPER_ADMIN and parent.center_id != current_user.center_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    try:
+        # Update fields if provided
+        update_data = parent_data.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(parent, field, value)
+
+        parent.updated_by_id = current_user.id
+
+        db.commit()
+        db.refresh(parent)
+
+        return parent
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=str(e))

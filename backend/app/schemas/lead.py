@@ -16,6 +16,13 @@ class ParentCreate(ParentBase):
     pass
 
 
+class ParentUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    notes: Optional[str] = None
+
+
 class ParentResponse(ParentBase):
     model_config = ConfigDict(from_attributes=True)
 
