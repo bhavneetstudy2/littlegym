@@ -1,0 +1,74 @@
+Starting data migration from Supabase to Render...
+
+Clearing existing data in target database...
+  Cleared child_trainer_notes
+  Cleared weekly_progress
+  Cleared progression_levels
+  Cleared activity_categories
+  Skipped age_groups: (psycopg.errors.UndefinedTable) relation "age_grou
+  Skipped class_types: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped report_cards: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped skill_progress: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped skills: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped curricula: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped attendance: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped discounts: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped payments: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped enrollments: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped class_sessions: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped batches: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped lead_activities: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped leads: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped intro_visits: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped enquiries: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped family_links: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped children: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped parents: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped users: (psycopg.errors.InFailedSqlTransaction) current tr
+  Skipped centers: (psycopg.errors.InFailedSqlTransaction) current tr
+
+Migrating data...
+  centers: ERROR - (psycopg.errors.UniqueViolation) duplicate key value violates unique constraint "centers_pkey"
+DETAI
+  users: ERROR - (psycopg.errors.UniqueViolation) duplicate key value violates unique constraint "users_pkey"
+DETAIL:
+  parents: ERROR - (psycopg.errors.ForeignKeyViolation) insert or update on table "parents" violates foreign key constr
+  children: ERROR - (psycopg.errors.ForeignKeyViolation) insert or update on table "children" violates foreign key const
+  family_links: ERROR - (psycopg.errors.ForeignKeyViolation) insert or update on table "family_links" violates foreign key c
+  enquiries: ERROR - (psycopg.errors.UndefinedTable) relation "enquiries" does not exist
+LINE 1: SELECT * FROM enquiries
+
+  intro_visits: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  leads: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  lead_activities: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  batches: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  class_sessions: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  enrollments: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  payments: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  discounts: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  attendance: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  curricula: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  skills: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  skill_progress: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  report_cards: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  class_types: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  age_groups: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  activity_categories: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  progression_levels: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  weekly_progress: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+  child_trainer_notes: ERROR - (psycopg.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end o
+
+Updating sequences...
+  centers_id_seq set to 3
+  users_id_seq set to 1
+  parents_id_seq set to 1
+  children_id_seq set to 1
+  family_links_id_seq set to 1
+Traceback (most recent call last):
+  File "C:\Littlegym\backend\migrate_data.py", line 108, in <module>
+    print("\n\u2705 Migration completed!")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\AppData\Local\Python\pythoncore-3.14-64\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 2: character maps to <undefined>

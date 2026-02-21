@@ -13,6 +13,8 @@ from app.schemas.lead import (
     IntroVisitCreate,
     IntroVisitMarkAttended,
     IntroVisitResponse,
+    ChildUpdate,
+    ChildResponse,
 )
 from app.schemas.lead_enhanced import (
     EnquiryFormCreate,
@@ -817,4 +819,39 @@ def close_lead_as_lost(
         )
         return closed_lead
     except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# ===== CHILD MANAGEMENT =====
+
+@router.patch("/child/{child_id}", response_model=ChildResponse)
+def update_child(
+    child_id: int,
+    child_data: ChildUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+):
+    """Update child information including enquiry ID, name, age, DOB, school"""
+    child = db.query(Child).filter(Child.id == child_id).first()
+    if not child:
+        raise HTTPException(status_code=404, detail="Child not found")
+
+    # Check tenant access
+    if current_user.role != UserRole.SUPER_ADMIN and child.center_id != current_user.center_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    try:
+        # Update fields if provided
+        update_data = child_data.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(child, field, value)
+
+        child.updated_by_id = current_user.id
+
+        db.commit()
+        db.refresh(child)
+
+        return child
+    except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=400, detail=str(e))

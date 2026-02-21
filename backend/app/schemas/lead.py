@@ -39,6 +39,17 @@ class ChildCreate(ChildBase):
     pass
 
 
+class ChildUpdate(BaseModel):
+    enquiry_id: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    dob: Optional[date] = None
+    age_years: Optional[int] = None
+    school: Optional[str] = None
+    interests: Optional[List[str]] = None
+    notes: Optional[str] = None
+
+
 class ChildResponse(ChildBase):
     model_config = ConfigDict(from_attributes=True)
 

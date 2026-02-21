@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import type { Lead, LeadDetail, IntroVisit, FollowUp } from '@/types/leads';
 import { STATUS_CONFIGS, IV_OUTCOME_LABELS, FOLLOW_UP_OUTCOME_LABELS } from '@/types/leads';
+import EditChildModal from './EditChildModal';
 
 interface LeadActivity {
   id: number;
@@ -88,11 +89,12 @@ export default function LeadDetailModal({
   const [activities, setActivities] = useState<LeadActivity[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(true);
   const [activeTab, setActiveTab] = useState<'details' | 'timeline'>('details');
+  const [showEditChildModal, setShowEditChildModal] = useState(false);
 
   const lead = detail;
   const statusConfig = STATUS_CONFIGS[lead.status];
   const child = lead.child;
-  const age = calculateAge(child?.dob);
+  const age = child?.age || calculateAge(child?.dob);
   const primaryParent = lead.parents?.find(p => p.is_primary) || lead.parents?.[0];
 
   useEffect(() => {
@@ -168,7 +170,15 @@ export default function LeadDetailModal({
             <div className="space-y-6">
               {/* Child Information */}
               <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Child Information</h3>
+                <div className="flex items-center justify-between mb-4 border-b pb-2">
+                  <h3 className="text-lg font-semibold text-gray-900">Child Information</h3>
+                  <button
+                    onClick={() => setShowEditChildModal(true)}
+                    className="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"
+                  >
+                    Edit
+                  </button>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <span className="text-gray-500 text-sm">Enquiry ID</span>
@@ -505,6 +515,21 @@ export default function LeadDetailModal({
           </div>
         </div>
       </div>
+
+      {/* Edit Child Modal */}
+      {showEditChildModal && child && (
+        <EditChildModal
+          child={child}
+          onClose={() => setShowEditChildModal(false)}
+          onSuccess={() => {
+            setShowEditChildModal(false);
+            if (onRefresh) {
+              onRefresh();
+              fetchActivities();
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

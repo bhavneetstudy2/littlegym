@@ -1,0 +1,1294 @@
+================================================================================
+CHANDIGARH DATA IMPORT - Starting...
+================================================================================
+
+Step 1: Building master children registry...
+--------------------------------------------------------------------------------
+Processing Enquiry sheet...
+  Enquiry sheet: 547 children
+Processing IV sheet...
+  IV sheet: 255 children
+Processing Enrolled sheet...
+  Enrolled sheet: 201 children
+Processing Expired sheet...
+  Expired sheet: 83 children
+Processing Tracker sheet...
+  Tracker sheet: 198 children
+
+OK Total unique children in master registry: 667
+
+Master registry built successfully!
+Ready to import 667 children to database
+
+Script prepared. Run next phase to insert into database.
+
+================================================================================
+PHASE 2: DATABASE IMPORT
+================================================================================
+
+Using user_id 7 for created_by/updated_by
+
+Step 2: Importing Children, Parents, and Family Links...
+--------------------------------------------------------------------------------
+  ERROR: Child TLGC0001: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0002: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0003: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0004: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0005: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0006: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0007: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0008: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0009: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0010: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0011: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0012: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0013: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0014: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0015: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0016: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0017: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0018: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0019: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0020: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0021: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0022: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0023: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0024: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0025: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0026: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0027: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0028: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0029: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0030: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0031: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0032: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0033: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0034: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0035: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0036: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0037: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0038: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0039: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0040: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0041: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0042: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0043: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0044: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0045: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0046: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0047: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0048: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0049: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0050: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0051: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0052: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0053: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0054: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0055: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0056: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0057: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0058: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0059: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0060: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0061: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0062: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0063: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0064: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0065: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0066: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0067: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0068: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0069: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0070: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0071: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0072: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0073: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0074: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0075: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0076: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0077: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0078: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0079: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0080: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0081: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0082: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0083: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0084: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0085: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0086: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0087: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0088: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0089: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0090: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0091: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0092: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0093: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0094: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0095: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0096: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0097: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0098: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0099: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0100: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0101: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0102: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0103: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0104: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0105: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0106: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0107: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0108: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0109: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0110: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0111: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0112: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0113: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0114: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0115: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0116: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0117: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0118: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0119: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0120: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0121: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0122: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0123: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0124: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0125: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0126: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0127: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0128: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0129: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0130: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0131: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0132: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0133: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0134: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0135: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0136: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0137: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0138: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0139: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0140: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0141: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0142: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0143: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0144: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0145: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0146: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0147: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0148: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0149: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0150: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0151: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0152: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0153: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0154: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0155: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0156: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0157: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0158: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0159: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0160: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0161: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0162: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0163: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0164: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0165: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0166: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0167: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0168: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0169: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0170: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0171: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0172: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0173: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0174: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0175: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0176: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0177: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0178: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0179: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0180: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0181: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0182: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0183: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0184: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0185: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0186: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0187: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0188: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0189: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0190: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0191: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0192: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0193: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0194: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0195: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0196: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0197: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0198: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0199: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0200: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0201: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0202: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0203: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0204: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0205: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0206: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0207: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0208: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0209: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0210: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0211: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0212: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0213: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0214: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0215: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0216: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0217: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0218: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0219: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0220: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0221: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0222: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0223: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0224: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0225: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0226: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0227: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0228: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0229: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0230: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0231: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0232: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0233: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0234: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0235: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0236: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0237: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0238: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0239: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0240: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0241: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0242: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0243: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0244: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0245: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0246: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0247: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0248: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0249: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0250: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0251: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0252: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0253: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0254: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0255: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0256: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0257: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0258: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0259: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0260: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0261: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0262: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0263: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0264: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0265: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0266: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0267: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0268: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0269: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0270: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0271: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0272: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0273: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0274: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0275: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0276: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0277: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0278: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0279: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0280: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0281: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0282: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0283: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0284: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0285: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0286: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0287: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0288: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0289: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0290: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0291: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0292: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0293: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0294: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0295: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0296: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0297: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0298: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0299: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0300: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0301: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0302: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0303: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0304: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0305: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0306: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0307: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0308: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0309: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0310: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0311: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0312: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0313: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0314: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0315: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0316: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0317: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0318: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0319: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0320: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0321: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0322: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0323: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0324: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0325: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0326: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0327: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0328: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0329: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0330: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0331: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0332: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0333: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0334: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0335: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0336: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0337: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0338: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0339: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0340: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0341: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0342: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0343: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0344: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0345: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0346: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0347: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0349: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0350: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0351: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0352: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0353: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0354: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0355: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0356: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0357: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0358: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0359: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0360: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0361: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0362: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0363: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0364: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0365: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0366: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0367: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0368: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0369: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0370: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0371: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0372: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0373: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0374: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0375: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0376: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0377: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0378: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0379: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0380: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0381: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0382: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0383: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0384: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0385: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0386: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0387: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0388: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0389: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0390: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0391: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0392: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0393: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0394: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0395: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0396: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0397: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0398: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0399: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0400: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0401: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0402: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0403: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0404: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0405: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0406: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0407: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0408: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0409: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0410: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0411: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0412: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0413: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0414: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0415: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0416: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0417: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0418: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Takes"
+  ERROR: Child TLGC0419: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0422: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0423: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0424: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0425: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0426: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0427: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0428: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0429: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0430: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0431: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0432: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0433: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0434: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0435: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0436: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0437: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0438: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0439: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0440: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0441: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0442: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0443: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0444: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0445: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0446: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0447: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0448: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0449: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0450: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0451: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0452: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0453: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0454: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0455: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0456: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0457: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0458: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0459: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0460: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0461: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Physic
+  ERROR: Child TLGC0462: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0463: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0464: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0465: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0466: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0467: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0468: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0469: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0470: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0471: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0472: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0473: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0474: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0475: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0476: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0477: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0478: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0479: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0480: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0481: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0482: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0483: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Physic
+  ERROR: Child TLGC0484: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0485: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0486: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0487: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Social
+  ERROR: Child TLGC0488: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0489: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0490: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0491: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0492: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0493: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0494: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Motor"
+  ERROR: Child TLGC0495: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0496: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0497: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Physic
+  ERROR: Child TLGC0498: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0499: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0500: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0501: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0502: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Physic
+  ERROR: Child TLGC0503: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Social
+  ERROR: Child TLGC0504: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Physic
+  ERROR: Child TLGC0505: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0506: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0507: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0508: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0509: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0510: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0511: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0512: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0513: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0514: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0515: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0516: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0517: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0518: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0519: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0520: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0521: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0522: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Physic
+  ERROR: Child TLGC0523: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0524: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0525: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0526: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0527: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0528: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0529: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC0530: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0531: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0532: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0533: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0534: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0535: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0536: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0537: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0538: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0539: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0540: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Physic
+  ERROR: Child TLGC0541: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Physic
+  ERROR: Child TLGC0542: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0543: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Physic
+  ERROR: Child TLGC0544: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0545: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0546: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0547: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0548: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0549: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC0550: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "Child"
+  ERROR: Child TLGC-IV-059: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-062: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-063: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-074: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-078: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-080: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-084: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-087: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-092: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-093: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-095: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-099: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-100: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-101: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-102: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-103: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-104: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-106: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-107: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-108: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-109: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-114: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-115: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-116: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-117: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-118: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-119: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-121: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-122: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-125: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-128: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-129: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-130: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-137: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-138: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-139: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-142: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-143: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-144: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-146: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-147: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-150: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-151: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-154: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-155: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-157: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-158: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-159: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-160: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-162: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-164: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-168: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-169: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-173: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-174: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-175: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-176: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-177: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-178: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-179: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-180: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-181: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-182: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-183: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-184: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-185: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-186: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-187: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-188: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-190: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-192: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-195: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-198: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-199: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-200: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-201: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-203: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-204: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-205: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-206: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-207: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-209: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-210: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-211: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-212: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-213: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-214: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-215: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC0348: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-224: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-225: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-226: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-227: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-230: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-241: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-243: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-245: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-249: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-256: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-257: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-259: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-263: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-IV-264: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-EN-022: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-EN-048: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-EN-064: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-EN-092: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-EN-093: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-EN-122: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-EN-195: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-EX-008: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-EX-009: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-EX-014: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-EX-022: (psycopg.errors.NotNullViolation) null value in column "is_archived" of relation "children" violates
+  ERROR: Child TLGC-TR-022: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC-TR-048: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC-TR-064: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC-TR-092: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC-TR-093: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  ERROR: Child TLGC-TR-119: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+OK Imported 0 children, 0 parents, 0 family links
+
+Step 3: Importing Leads...
+--------------------------------------------------------------------------------
+OK Imported 0 leads
+
+================================================================================
+IMPORT SUMMARY - PHASE 2
+================================================================================
+Children imported: 0
+Parents imported: 0
+Family links created: 0
+Leads created: 0
+
+Errors encountered: 667
+
+First 10 errors:
+  - Child TLGC0001: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  - Child TLGC0002: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  - Child TLGC0003: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  - Child TLGC0004: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  - Child TLGC0005: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  - Child TLGC0006: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  - Child TLGC0007: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  - Child TLGC0008: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  - Child TLGC0009: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+  - Child TLGC0010: (psycopg.errors.InvalidTextRepresentation) invalid input syntax for type json
+DETAIL:  Token "nan" i
+
+================================================================================
+Phase 2 Complete!
+Mappings saved to import_mappings.pkl
+================================================================================
