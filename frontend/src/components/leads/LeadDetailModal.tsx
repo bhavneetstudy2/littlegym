@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import type { Lead, LeadDetail, IntroVisit, FollowUp } from '@/types/leads';
+import type { Lead, LeadDetail, IntroVisit, FollowUp, Parent } from '@/types/leads';
 import { STATUS_CONFIGS, IV_OUTCOME_LABELS, FOLLOW_UP_OUTCOME_LABELS } from '@/types/leads';
 import EditChildModal from './EditChildModal';
+import EditParentModal from './EditParentModal';
 
 interface LeadActivity {
   id: number;
@@ -90,6 +91,8 @@ export default function LeadDetailModal({
   const [loadingActivities, setLoadingActivities] = useState(true);
   const [activeTab, setActiveTab] = useState<'details' | 'timeline'>('details');
   const [showEditChildModal, setShowEditChildModal] = useState(false);
+  const [showEditParentModal, setShowEditParentModal] = useState(false);
+  const [selectedParent, setSelectedParent] = useState<Parent | null>(null);
 
   const lead = detail;
   const statusConfig = STATUS_CONFIGS[lead.status];
@@ -214,11 +217,22 @@ export default function LeadDetailModal({
                   <div className="space-y-3">
                     {lead.parents.map((parent, idx) => (
                       <div key={idx} className="bg-gray-50 p-4 rounded-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-semibold">{parent.name}</span>
-                          {parent.is_primary && (
-                            <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">Primary</span>
-                          )}
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{parent.name}</span>
+                            {parent.is_primary && (
+                              <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">Primary</span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => {
+                              setSelectedParent(parent);
+                              setShowEditParentModal(true);
+                            }}
+                            className="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"
+                          >
+                            Edit
+                          </button>
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-sm">
                           <div>
@@ -523,6 +537,25 @@ export default function LeadDetailModal({
           onClose={() => setShowEditChildModal(false)}
           onSuccess={() => {
             setShowEditChildModal(false);
+            if (onRefresh) {
+              onRefresh();
+              fetchActivities();
+            }
+          }}
+        />
+      )}
+
+      {/* Edit Parent Modal */}
+      {showEditParentModal && selectedParent && (
+        <EditParentModal
+          parent={selectedParent}
+          onClose={() => {
+            setShowEditParentModal(false);
+            setSelectedParent(null);
+          }}
+          onSuccess={() => {
+            setShowEditParentModal(false);
+            setSelectedParent(null);
             if (onRefresh) {
               onRefresh();
               fetchActivities();
