@@ -6,7 +6,7 @@ import { api } from '@/lib/api';
 import { useCenter } from '@/contexts/CenterContext';
 import { getInitials, getAvatarColor } from '@/lib/utils';
 import PageHeader from '@/components/ui/PageHeader';
-import { Search, X, Check, AlertTriangle, Building2, CalendarCheck } from 'lucide-react';
+import { Search, X, Check, AlertTriangle, Building2, CalendarCheck, LayoutGrid, List } from 'lucide-react';
 
 interface Batch {
   id: number;
@@ -62,6 +62,7 @@ export default function AttendancePage() {
   const [error, setError] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -374,6 +375,22 @@ export default function AttendancePage() {
               <span className="text-emerald-600 font-medium">{presentStudents.length} present</span>
               <span>{unmarkedStudents.length} remaining</span>
             </div>
+            <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setViewMode('card')}
+                className={`p-1.5 transition ${viewMode === 'card' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                title="Card view"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-1.5 transition ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                title="List view"
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Alphabet filter */}
@@ -454,43 +471,115 @@ export default function AttendancePage() {
                       : 'No students to show'}
               </p>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {filteredStudents.map((student) => {
-                const initials = getInitials(student.child_name);
-                const color = getAvatarColor(student.child_name);
-                const isLow = student.classes_remaining > 0 && student.classes_remaining <= 3;
-                const isSelected = selectedIds.has(student.child_id);
+          ) : viewMode === 'card' ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                {filteredStudents.map((student) => {
+                  const initials = getInitials(student.child_name);
+                  const color = getAvatarColor(student.child_name);
+                  const isLow = student.classes_remaining > 0 && student.classes_remaining <= 3;
+                  const isSelected = selectedIds.has(student.child_id);
 
-                return (
-                  <button
-                    key={student.child_id}
-                    onClick={() => toggleSelect(student.child_id)}
-                    className={`rounded-xl border p-4 text-center active:scale-[0.97] transition-all group relative ${
-                      isSelected
-                        ? 'bg-blue-50 border-2 border-blue-500 shadow-sm shadow-blue-100'
-                        : 'bg-white border-gray-200 hover:border-blue-400 hover:shadow-md'
-                    }`}
-                  >
-                    {isSelected && (
-                      <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center shadow-sm">
-                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                  return (
+                    <button
+                      key={student.child_id}
+                      onClick={() => toggleSelect(student.child_id)}
+                      className={`rounded-xl border p-4 text-center active:scale-[0.97] transition-all group relative ${
+                        isSelected
+                          ? 'bg-blue-50 border-2 border-blue-500 shadow-sm shadow-blue-100'
+                          : 'bg-white border-gray-200 hover:border-blue-400 hover:shadow-md'
+                      }`}
+                    >
+                      {isSelected && (
+                        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center shadow-sm">
+                          <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                        </div>
+                      )}
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold mx-auto mb-2 ${color} ${isSelected ? 'ring-2 ring-blue-400 ring-offset-2' : 'group-hover:ring-2 group-hover:ring-blue-300 group-hover:ring-offset-2'} transition-all`}>
+                        {initials}
                       </div>
-                    )}
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold mx-auto mb-2 ${color} ${isSelected ? 'ring-2 ring-blue-400 ring-offset-2' : 'group-hover:ring-2 group-hover:ring-blue-300 group-hover:ring-offset-2'} transition-all`}>
-                      {initials}
-                    </div>
-                    <div className="text-sm font-medium text-gray-900 truncate">{student.child_name}</div>
-                    <div className="text-xs text-gray-400 mt-0.5">#{student.enrollment_id}</div>
-                    <div className="mt-2 flex items-center justify-center gap-1.5">
-                      <span className="text-[10px] text-gray-400">{student.classes_attended}/{student.classes_booked}</span>
-                      {isLow && <span className="badge-yellow text-[10px] px-1.5 py-0.5">{student.classes_remaining} left</span>}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+                      <div className="text-sm font-medium text-gray-900 truncate">{student.child_name}</div>
+                      <div className="text-xs text-gray-400 mt-0.5">#{student.enrollment_id}</div>
+                      <div className="mt-2 flex items-center justify-center gap-1.5">
+                        <span className="text-[10px] text-gray-400">{student.classes_attended}/{student.classes_booked}</span>
+                        {isLow && <span className="badge-yellow text-[10px] px-1.5 py-0.5">{student.classes_remaining} left</span>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="w-10 px-3 py-2.5 text-left">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.size === filteredStudents.length && filteredStudents.length > 0}
+                          onChange={() => {
+                            if (selectedIds.size === filteredStudents.length) {
+                              clearSelection();
+                            } else {
+                              selectAllVisible();
+                            }
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Student</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase hidden sm:table-cell">Enroll #</th>
+                      <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-500 uppercase">Attended</th>
+                      <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-500 uppercase">Remaining</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredStudents.map((student) => {
+                      const initials = getInitials(student.child_name);
+                      const color = getAvatarColor(student.child_name);
+                      const isLow = student.classes_remaining > 0 && student.classes_remaining <= 3;
+                      const isSelected = selectedIds.has(student.child_id);
+
+                      return (
+                        <tr
+                          key={student.child_id}
+                          onClick={() => toggleSelect(student.child_id)}
+                          className={`cursor-pointer transition ${
+                            isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <td className="px-3 py-2.5">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleSelect(student.child_id)}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <div className="flex items-center gap-2.5">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${color}`}>
+                                {initials}
+                              </div>
+                              <span className="font-medium text-gray-900 truncate">{student.child_name}</span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-2.5 text-gray-400 hidden sm:table-cell">#{student.enrollment_id}</td>
+                          <td className="px-3 py-2.5 text-center text-gray-600">{student.classes_attended}/{student.classes_booked}</td>
+                          <td className="px-3 py-2.5 text-center">
+                            {isLow ? (
+                              <span className="badge-yellow text-[10px] px-1.5 py-0.5">{student.classes_remaining} left</span>
+                            ) : (
+                              <span className="text-gray-600">{student.classes_remaining}</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )
+          }
 
           {/* Present Today */}
           {presentStudents.length > 0 && (
@@ -507,40 +596,89 @@ export default function AttendancePage() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                {presentStudents.map((student) => {
-                  const isSaving = savingChildId === student.child_id;
-                  const initials = getInitials(student.child_name);
-                  const color = getAvatarColor(student.child_name);
-                  return (
-                    <div
-                      key={student.child_id}
-                      className="rounded-xl p-4 text-center transition-all relative bg-emerald-50 border border-emerald-200"
-                    >
-                      <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm">
-                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                      </div>
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold mx-auto mb-2 ${color} ring-2 ring-emerald-400 ring-offset-2`}>
-                        {initials}
-                      </div>
-                      <div className="text-sm font-medium text-emerald-900 truncate">{student.child_name}</div>
-                      <div className="text-xs text-emerald-500 mt-0.5">#{student.enrollment_id}</div>
-                      <button
-                        onClick={() => undoPresent(student.child_id)}
-                        disabled={isSaving}
-                        className="mt-2 text-xs text-emerald-600 hover:text-red-500 transition disabled:opacity-50 font-medium"
-                        title="Undo"
+              {viewMode === 'card' ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                  {presentStudents.map((student) => {
+                    const isSaving = savingChildId === student.child_id;
+                    const initials = getInitials(student.child_name);
+                    const color = getAvatarColor(student.child_name);
+                    return (
+                      <div
+                        key={student.child_id}
+                        className="rounded-xl p-4 text-center transition-all relative bg-emerald-50 border border-emerald-200"
                       >
-                        {isSaving ? (
-                          <div className="spinner-sm inline-block" />
-                        ) : (
-                          'Undo'
-                        )}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+                        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm">
+                          <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                        </div>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold mx-auto mb-2 ${color} ring-2 ring-emerald-400 ring-offset-2`}>
+                          {initials}
+                        </div>
+                        <div className="text-sm font-medium text-emerald-900 truncate">{student.child_name}</div>
+                        <div className="text-xs text-emerald-500 mt-0.5">#{student.enrollment_id}</div>
+                        <button
+                          onClick={() => undoPresent(student.child_id)}
+                          disabled={isSaving}
+                          className="mt-2 text-xs text-emerald-600 hover:text-red-500 transition disabled:opacity-50 font-medium"
+                          title="Undo"
+                        >
+                          {isSaving ? (
+                            <div className="spinner-sm inline-block" />
+                          ) : (
+                            'Undo'
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="bg-emerald-50 rounded-xl border border-emerald-200 overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-emerald-100/50 border-b border-emerald-200">
+                        <th className="w-10 px-3 py-2.5 text-center"><Check className="w-3.5 h-3.5 text-emerald-600 mx-auto" /></th>
+                        <th className="px-3 py-2.5 text-left text-xs font-semibold text-emerald-700 uppercase">Student</th>
+                        <th className="px-3 py-2.5 text-left text-xs font-semibold text-emerald-700 uppercase hidden sm:table-cell">Enroll #</th>
+                        <th className="px-3 py-2.5 text-center text-xs font-semibold text-emerald-700 uppercase">Attended</th>
+                        <th className="px-3 py-2.5 text-center text-xs font-semibold text-emerald-700 uppercase">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-emerald-100">
+                      {presentStudents.map((student) => {
+                        const isSaving = savingChildId === student.child_id;
+                        const initials = getInitials(student.child_name);
+                        const color = getAvatarColor(student.child_name);
+                        return (
+                          <tr key={student.child_id} className="hover:bg-emerald-100/30 transition">
+                            <td className="px-3 py-2.5 text-center">
+                              <Check className="w-4 h-4 text-emerald-600 mx-auto" />
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <div className="flex items-center gap-2.5">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${color} ring-2 ring-emerald-400 ring-offset-1`}>
+                                  {initials}
+                                </div>
+                                <span className="font-medium text-emerald-900 truncate">{student.child_name}</span>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5 text-emerald-500 hidden sm:table-cell">#{student.enrollment_id}</td>
+                            <td className="px-3 py-2.5 text-center text-emerald-700">{student.classes_attended}/{student.classes_booked}</td>
+                            <td className="px-3 py-2.5 text-center">
+                              <button
+                                onClick={() => undoPresent(student.child_id)}
+                                disabled={isSaving}
+                                className="text-xs text-emerald-600 hover:text-red-500 transition disabled:opacity-50 font-medium"
+                              >
+                                {isSaving ? <div className="spinner-sm inline-block" /> : 'Undo'}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </>
