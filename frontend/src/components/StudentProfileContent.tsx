@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import DateInput from '@/components/ui/DateInput';
 
 interface Child {
   id: number;
@@ -164,7 +163,24 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
   const [editingEnrollmentId, setEditingEnrollmentId] = useState<number | null>(null);
   const [enrollmentEditData, setEnrollmentEditData] = useState({ visits_included: '', start_date: '', end_date: '', notes: '' });
   const [savingEnrollment, setSavingEnrollment] = useState(false);
-  const [renewEnrollment, setRenewEnrollment] = useState<EnrolledStudent | null>(null);
+  // Inline renewal state
+  const [renewingEnrollmentId, setRenewingEnrollmentId] = useState<number | null>(null);
+  const [renewBatches, setRenewBatches] = useState<{ id: number; name: string; age_min?: number; age_max?: number; days_of_week?: string[]; start_time?: string; end_time?: string }[]>([]);
+  const [renewForm, setRenewForm] = useState({
+    batchId: '' as number | '',
+    daysSelected: [] as string[],
+    planType: 'MONTHLY',
+    bookedClasses: '',
+    startDate: '',
+    endDate: '',
+    totalAmount: '',
+    paidAmount: '',
+    paymentMethod: 'CASH',
+    paymentRef: '',
+    notes: '',
+  });
+  const [renewSaving, setRenewSaving] = useState(false);
+  const [renewError, setRenewError] = useState<string | null>(null);
 
   useEffect(() => {
     if (childId && centerId) {
@@ -334,6 +350,91 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
     } finally {
       setSavingEnrollment(false);
     }
+  };
+
+  const startRenewing = async (enrollment: EnrolledStudent) => {
+    setRenewingEnrollmentId(enrollment.enrollment_id);
+    setEditingEnrollmentId(null); // close any edit form
+    setRenewError(null);
+    // Pre-fill form from previous enrollment
+    const nextStart = enrollment.end_date
+      ? (() => { const d = new Date(enrollment.end_date!); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0]; })()
+      : new Date().toISOString().split('T')[0];
+    const initialForm = {
+      batchId: (enrollment.batch?.id || '') as number | '',
+      daysSelected: enrollment.days_selected || enrollment.batch?.days_of_week || [],
+      planType: enrollment.plan_type || 'MONTHLY',
+      bookedClasses: enrollment.visits_included ? String(enrollment.visits_included) : '',
+      startDate: nextStart,
+      endDate: '',
+      totalAmount: '',
+      paidAmount: '',
+      paymentMethod: 'CASH',
+      paymentRef: '',
+      notes: '',
+    };
+    setRenewForm(updateRenewCalc(initialForm));
+    // Fetch batches
+    try {
+      const params = new URLSearchParams({ active_only: 'true', center_id: centerId.toString() });
+      const data = await api.get<typeof renewBatches>(`/api/v1/enrollments/batches?${params}`);
+      setRenewBatches(data);
+    } catch {
+      console.error('Failed to fetch batches');
+    }
+  };
+
+  const submitRenewal = async () => {
+    setRenewError(null);
+    if (!renewForm.batchId) { setRenewError('Please select a batch'); return; }
+    if (!renewForm.bookedClasses || parseInt(renewForm.bookedClasses) <= 0) { setRenewError('Booked classes is required'); return; }
+    if (!renewForm.totalAmount || parseFloat(renewForm.totalAmount) <= 0) { setRenewError('Total amount is required'); return; }
+    if (!renewForm.paidAmount) { setRenewError('Paid amount is required'); return; }
+
+    setRenewSaving(true);
+    try {
+      const payload = {
+        child_id: childId,
+        batch_id: renewForm.batchId,
+        plan_type: renewForm.planType,
+        start_date: renewForm.startDate || null,
+        end_date: renewForm.endDate || null,
+        visits_included: renewForm.bookedClasses ? parseInt(renewForm.bookedClasses) : null,
+        days_selected: renewForm.daysSelected.length > 0 ? renewForm.daysSelected : null,
+        notes: renewForm.notes || null,
+        payment: {
+          amount: parseFloat(renewForm.paidAmount),
+          method: renewForm.paymentMethod,
+          reference: renewForm.paymentRef || null,
+          paid_at: new Date().toISOString(),
+        },
+      };
+      await api.post(`/api/v1/enrollments?center_id=${centerId}`, payload);
+      setRenewingEnrollmentId(null);
+      fetchStudentData(); // refresh all data
+    } catch (err: any) {
+      setRenewError(err.message || 'Failed to create renewal');
+    } finally {
+      setRenewSaving(false);
+    }
+  };
+
+  // Auto-calculate end date and booked classes for renewal form
+  const updateRenewCalc = (form: typeof renewForm) => {
+    if (form.startDate && form.planType !== 'PAY_PER_VISIT' && form.planType !== 'CUSTOM') {
+      const start = new Date(form.startDate);
+      const end = new Date(start);
+      const daysPerWeek = Math.max(form.daysSelected.length, 1);
+      let weeks = 1;
+      switch (form.planType) {
+        case 'WEEKLY': weeks = 1; end.setDate(end.getDate() + 7); break;
+        case 'MONTHLY': weeks = 4; end.setMonth(end.getMonth() + 1); break;
+        case 'QUARTERLY': weeks = 12; end.setMonth(end.getMonth() + 3); break;
+        case 'YEARLY': weeks = 48; end.setFullYear(end.getFullYear() + 1); break;
+      }
+      return { ...form, endDate: end.toISOString().split('T')[0], bookedClasses: String(daysPerWeek * weeks) };
+    }
+    return form;
   };
 
   if (loading) {
@@ -719,7 +820,7 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
                               </button>
                             ) : (
                               <button
-                                onClick={() => setRenewEnrollment(enrollment)}
+                                onClick={() => startRenewing(enrollment)}
                                 className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
                               >
                                 Renew
@@ -728,7 +829,7 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
                           })()}
                           {(enrollment.status === 'EXPIRED' || enrollment.status === 'CANCELLED') && (
                             <button
-                              onClick={() => setRenewEnrollment(enrollment)}
+                              onClick={() => startRenewing(enrollment)}
                               className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
                             >
                               Renew
@@ -830,10 +931,154 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
                         </div>
                       )}
 
-                      {enrollment.enrollment_notes && (
+                      {enrollment.enrollment_notes && editingEnrollmentId !== enrollment.enrollment_id && (
                         <div className="mt-2 pt-2 border-t border-gray-200 text-sm">
                           <span className="text-gray-500">Notes:</span>{' '}
                           <span className="text-gray-700">{enrollment.enrollment_notes}</span>
+                        </div>
+                      )}
+
+                      {/* Inline Renewal Form */}
+                      {renewingEnrollmentId === enrollment.enrollment_id && (
+                        <div className="mt-3 pt-3 border-t-2 border-blue-300 bg-blue-50 -mx-4 -mb-4 p-4 rounded-b-lg">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-semibold text-blue-800 text-sm">New Renewal</h4>
+                            <button onClick={() => setRenewingEnrollmentId(null)} className="text-gray-400 hover:text-gray-600 text-lg">&times;</button>
+                          </div>
+                          <div className="space-y-3">
+                            {/* Batch */}
+                            <div>
+                              <label className="text-xs font-medium text-gray-700 block mb-1">Batch *</label>
+                              <select
+                                value={renewForm.batchId}
+                                onChange={e => {
+                                  const newBatchId = e.target.value ? parseInt(e.target.value) : '' as number | '';
+                                  const batch = renewBatches.find(b => b.id === newBatchId);
+                                  const newDays = batch?.days_of_week || renewForm.daysSelected;
+                                  const updated = { ...renewForm, batchId: newBatchId, daysSelected: newDays };
+                                  setRenewForm(updateRenewCalc(updated));
+                                }}
+                                className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                              >
+                                <option value="">Select Batch</option>
+                                {renewBatches.map(b => (
+                                  <option key={b.id} value={b.id}>
+                                    {b.name} {b.age_min && b.age_max ? `(${b.age_min}-${b.age_max} yrs)` : ''}
+                                    {b.days_of_week ? ` - ${b.days_of_week.join(', ')}` : ''}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            {/* Days */}
+                            <div>
+                              <label className="text-xs font-medium text-gray-700 block mb-1">Class Days</label>
+                              <div className="flex flex-wrap gap-1.5">
+                                {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(day => (
+                                  <button
+                                    key={day}
+                                    type="button"
+                                    onClick={() => {
+                                      const newDays = renewForm.daysSelected.includes(day)
+                                        ? renewForm.daysSelected.filter(d => d !== day)
+                                        : [...renewForm.daysSelected, day];
+                                      const updated = { ...renewForm, daysSelected: newDays };
+                                      setRenewForm(updateRenewCalc(updated));
+                                    }}
+                                    className={`px-2.5 py-1 text-xs font-medium rounded border transition ${
+                                      renewForm.daysSelected.includes(day)
+                                        ? 'bg-blue-600 text-white border-blue-600'
+                                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    {day}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            {/* Duration + Booked Classes */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-xs font-medium text-gray-700 block mb-1">Duration *</label>
+                                <select
+                                  value={renewForm.planType}
+                                  onChange={e => {
+                                    const updated = { ...renewForm, planType: e.target.value };
+                                    setRenewForm(updateRenewCalc(updated));
+                                  }}
+                                  className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                                >
+                                  {[{v:'MONTHLY',l:'Monthly'},{v:'QUARTERLY',l:'Quarterly'},{v:'YEARLY',l:'Yearly'},{v:'PAY_PER_VISIT',l:'Per Visit'},{v:'WEEKLY',l:'Weekly'},{v:'CUSTOM',l:'Custom'}].map(p => (
+                                    <option key={p.v} value={p.v}>{p.l}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium text-gray-700 block mb-1">Booked Classes *</label>
+                                <input type="number" value={renewForm.bookedClasses} onChange={e => setRenewForm({...renewForm, bookedClasses: e.target.value})} min="1" placeholder="e.g. 24" className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm" />
+                              </div>
+                            </div>
+                            {/* Dates */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-xs font-medium text-gray-700 block mb-1">Start Date *</label>
+                                <input type="date" value={renewForm.startDate} onChange={e => {
+                                  const updated = { ...renewForm, startDate: e.target.value };
+                                  setRenewForm(updateRenewCalc(updated));
+                                }} className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm" />
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium text-gray-700 block mb-1">End Date *</label>
+                                <input type="date" value={renewForm.endDate} onChange={e => setRenewForm({...renewForm, endDate: e.target.value})} min={renewForm.startDate} className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm" />
+                              </div>
+                            </div>
+                            {/* Payment */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-xs font-medium text-gray-700 block mb-1">Total Amount (Rs.) *</label>
+                                <input type="number" value={renewForm.totalAmount} onChange={e => {
+                                  setRenewForm({...renewForm, totalAmount: e.target.value, paidAmount: renewForm.paidAmount || e.target.value});
+                                }} min="0" step="0.01" placeholder="0" className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm" />
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium text-gray-700 block mb-1">Paid Amount (Rs.) *</label>
+                                <input type="number" value={renewForm.paidAmount} onChange={e => setRenewForm({...renewForm, paidAmount: e.target.value})} min="0" step="0.01" placeholder="0" className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm" />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-xs font-medium text-gray-700 block mb-1">Payment Mode *</label>
+                                <select value={renewForm.paymentMethod} onChange={e => setRenewForm({...renewForm, paymentMethod: e.target.value})} className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm">
+                                  {[{v:'CASH',l:'Cash'},{v:'UPI',l:'UPI'},{v:'CARD',l:'Card'},{v:'BANK_TRANSFER',l:'Bank Transfer'},{v:'OTHER',l:'Other'}].map(m => (
+                                    <option key={m.v} value={m.v}>{m.l}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium text-gray-700 block mb-1">Reference / Txn ID</label>
+                                <input type="text" value={renewForm.paymentRef} onChange={e => setRenewForm({...renewForm, paymentRef: e.target.value})} placeholder="Optional" className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm" />
+                              </div>
+                            </div>
+                            {/* Notes */}
+                            <div>
+                              <label className="text-xs font-medium text-gray-700 block mb-1">Notes</label>
+                              <textarea value={renewForm.notes} onChange={e => setRenewForm({...renewForm, notes: e.target.value})} rows={2} placeholder="Optional renewal notes..." className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm" />
+                            </div>
+                            {renewError && (
+                              <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-xs">{renewError}</div>
+                            )}
+                            {/* Actions */}
+                            <div className="flex gap-2 justify-end pt-1">
+                              <button onClick={() => setRenewingEnrollmentId(null)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 border border-gray-300 rounded">Cancel</button>
+                              <button
+                                onClick={submitRenewal}
+                                disabled={renewSaving}
+                                className="text-sm text-white bg-blue-600 hover:bg-blue-700 px-4 py-1 rounded disabled:opacity-50 flex items-center gap-1"
+                              >
+                                {renewSaving && <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>}
+                                {renewSaving ? 'Creating...' : 'Create Renewal'}
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1091,432 +1336,7 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
         )}
       </div>
 
-      {/* Renewal Modal */}
-      {renewEnrollment && childInfo && (
-        <RenewFromProfileModal
-          enrollment={renewEnrollment}
-          child={childInfo}
-          parents={parents}
-          centerId={centerId}
-          onClose={() => setRenewEnrollment(null)}
-          onSuccess={() => {
-            setRenewEnrollment(null);
-            fetchStudentData();
-          }}
-        />
-      )}
     </>
   );
 }
 
-
-// ─── Renewal Modal (used from Student Profile) ─────────────────────────────
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const PLAN_TYPES = [
-  { value: 'MONTHLY', label: 'Monthly' },
-  { value: 'QUARTERLY', label: 'Quarterly' },
-  { value: 'YEARLY', label: 'Yearly' },
-  { value: 'PAY_PER_VISIT', label: 'Pay Per Visit' },
-  { value: 'WEEKLY', label: 'Weekly' },
-  { value: 'CUSTOM', label: 'Custom' },
-];
-const PAYMENT_METHODS = [
-  { value: 'CASH', label: 'Cash' },
-  { value: 'UPI', label: 'UPI' },
-  { value: 'CARD', label: 'Card' },
-  { value: 'BANK_TRANSFER', label: 'Bank Transfer' },
-  { value: 'OTHER', label: 'Other' },
-];
-
-interface RenewBatch {
-  id: number;
-  name: string;
-  age_min?: number;
-  age_max?: number;
-  days_of_week?: string[];
-  start_time?: string;
-  end_time?: string;
-}
-
-function RenewFromProfileModal({
-  enrollment,
-  child,
-  parents,
-  centerId,
-  onClose,
-  onSuccess,
-}: {
-  enrollment: EnrolledStudent;
-  child: Child;
-  parents: Parent[];
-  centerId: number;
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
-  const [batches, setBatches] = useState<RenewBatch[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-
-  // Form state pre-filled from previous enrollment
-  const [batchId, setBatchId] = useState<number | ''>(enrollment.batch?.id || '');
-  const [daysSelected, setDaysSelected] = useState<string[]>(enrollment.days_selected || enrollment.batch?.days_of_week || []);
-  const [planType, setPlanType] = useState(enrollment.plan_type || 'MONTHLY');
-  const [bookedClasses, setBookedClasses] = useState(enrollment.visits_included ? String(enrollment.visits_included) : '');
-  const [startDate, setStartDate] = useState(() => {
-    if (enrollment.end_date) {
-      const next = new Date(enrollment.end_date);
-      next.setDate(next.getDate() + 1);
-      return next.toISOString().split('T')[0];
-    }
-    return new Date().toISOString().split('T')[0];
-  });
-  const [endDate, setEndDate] = useState('');
-  const [totalAmount, setTotalAmount] = useState('');
-  const [paidAmount, setPaidAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('CASH');
-  const [paymentRef, setPaymentRef] = useState('');
-  const [notes, setNotes] = useState('');
-
-  const age = child.dob ? (() => {
-    const today = new Date();
-    const birth = new Date(child.dob!);
-    let a = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) a--;
-    return a;
-  })() : child.age_years;
-
-  const primaryParent = parents.find(p => p.is_primary_contact) || parents[0];
-
-  useEffect(() => {
-    fetchBatches();
-  }, []);
-
-  // Auto-fill days when batch changes
-  useEffect(() => {
-    if (batchId) {
-      const batch = batches.find(b => b.id === batchId);
-      if (batch?.days_of_week) {
-        setDaysSelected(batch.days_of_week);
-      }
-    }
-  }, [batchId, batches]);
-
-  // Auto-calculate end date and booked classes
-  useEffect(() => {
-    if (startDate && planType !== 'PAY_PER_VISIT' && planType !== 'CUSTOM') {
-      const start = new Date(startDate);
-      const end = new Date(start);
-      const daysPerWeek = Math.max(daysSelected.length, 1);
-      let weeks = 1;
-      switch (planType) {
-        case 'WEEKLY': weeks = 1; end.setDate(end.getDate() + 7); break;
-        case 'MONTHLY': weeks = 4; end.setMonth(end.getMonth() + 1); break;
-        case 'QUARTERLY': weeks = 12; end.setMonth(end.getMonth() + 3); break;
-        case 'YEARLY': weeks = 48; end.setFullYear(end.getFullYear() + 1); break;
-      }
-      setEndDate(end.toISOString().split('T')[0]);
-      setBookedClasses(String(daysPerWeek * weeks));
-    }
-  }, [startDate, planType, daysSelected.length]);
-
-  const fetchBatches = async () => {
-    try {
-      const params = new URLSearchParams({ active_only: 'true', center_id: centerId.toString() });
-      const data = await api.get<RenewBatch[]>(`/api/v1/enrollments/batches?${params}`);
-      setBatches(data);
-    } catch {
-      console.error('Failed to fetch batches');
-    }
-  };
-
-  const toggleDay = (day: string) => {
-    setDaysSelected(prev =>
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
-    );
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (!batchId) { setError('Please select a batch'); return; }
-    if (!bookedClasses || parseInt(bookedClasses) <= 0) { setError('Booked classes is required'); return; }
-    if (!totalAmount || parseFloat(totalAmount) <= 0) { setError('Total amount is required'); return; }
-    if (!paidAmount) { setError('Paid amount is required'); return; }
-
-    setLoading(true);
-    try {
-      const payload = {
-        child_id: child.id,
-        batch_id: batchId,
-        plan_type: planType,
-        start_date: startDate || null,
-        end_date: endDate || null,
-        visits_included: bookedClasses ? parseInt(bookedClasses) : null,
-        days_selected: daysSelected.length > 0 ? daysSelected : null,
-        notes: notes || null,
-        payment: {
-          amount: parseFloat(paidAmount),
-          method: paymentMethod,
-          reference: paymentRef || null,
-          paid_at: new Date().toISOString(),
-        },
-      };
-      await api.post(`/api/v1/enrollments?center_id=${centerId}`, payload);
-      setSuccess(true);
-      setTimeout(() => onSuccess(), 1200);
-    } catch (err: any) {
-      setError(err.message || 'Failed to create renewal');
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="bg-blue-600 text-white p-4 flex items-center justify-between rounded-t-lg">
-          <div>
-            <h2 className="text-lg font-bold">Renew Enrollment</h2>
-            <p className="text-blue-100 text-sm">
-              {child.enquiry_id && <span className="font-mono mr-2">{child.enquiry_id}</span>}
-              {child.first_name} {child.last_name || ''}
-            </p>
-          </div>
-          <button onClick={onClose} className="text-white hover:text-blue-200 text-2xl" disabled={loading}>
-            &times;
-          </button>
-        </div>
-
-        {/* Auto-populated student info (read-only) */}
-        <div className="px-6 pt-4 pb-2">
-          <div className="bg-gray-50 rounded-lg p-3 text-sm space-y-1">
-            <div className="flex justify-between">
-              <span className="text-gray-500">Student:</span>
-              <span className="font-medium">{child.first_name} {child.last_name || ''}</span>
-            </div>
-            {child.enquiry_id && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">TLG ID:</span>
-                <span className="font-medium font-mono">{child.enquiry_id}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-gray-500">DOB / Age:</span>
-              <span className="font-medium">
-                {child.dob
-                  ? `${new Date(child.dob).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} (${age} yrs)`
-                  : age ? `${age} years` : '-'}
-              </span>
-            </div>
-            {primaryParent && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Parent:</span>
-                <span className="font-medium">{primaryParent.name} ({primaryParent.phone})</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-gray-500">Previous Plan:</span>
-              <span className="font-medium">
-                {getPlanDisplay(enrollment.plan_type)} — {enrollment.batch?.name || 'No batch'}
-                {enrollment.visits_included ? ` · ${enrollment.visits_used}/${enrollment.visits_included} classes` : ''}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-auto px-6 pb-6">
-          <div className="space-y-4 mt-3">
-            {/* Batch */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Batch <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={batchId}
-                onChange={e => setBatchId(e.target.value ? parseInt(e.target.value) : '')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              >
-                <option value="">Select Batch</option>
-                {batches.map(b => (
-                  <option key={b.id} value={b.id}>
-                    {b.name} {b.age_min && b.age_max ? `(${b.age_min}-${b.age_max} yrs)` : ''}
-                    {b.days_of_week ? ` - ${b.days_of_week.join(', ')}` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Days */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Class Days</label>
-              <div className="flex flex-wrap gap-2">
-                {DAYS.map(day => (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => toggleDay(day)}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition ${
-                      daysSelected.includes(day)
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    {day}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Duration + Booked Classes */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Duration <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={planType}
-                  onChange={e => setPlanType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {PLAN_TYPES.map(p => (
-                    <option key={p.value} value={p.value}>{p.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Booked Classes <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  value={bookedClasses}
-                  onChange={e => setBookedClasses(e.target.value)}
-                  placeholder="e.g. 24"
-                  min="1"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            {/* Start Date + End Date */}
-            <div className="grid grid-cols-2 gap-4">
-              <DateInput label="Start Date" value={startDate} onChange={setStartDate} required />
-              <DateInput label="End Date" value={endDate} onChange={setEndDate} min={startDate} required />
-            </div>
-
-            {/* Total Amount + Paid Amount */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Total Amount (Rs.) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  value={totalAmount}
-                  onChange={e => {
-                    setTotalAmount(e.target.value);
-                    if (!paidAmount) setPaidAmount(e.target.value);
-                  }}
-                  placeholder="0"
-                  min="0"
-                  step="0.01"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Paid Amount (Rs.) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  value={paidAmount}
-                  onChange={e => setPaidAmount(e.target.value)}
-                  placeholder="0"
-                  min="0"
-                  step="0.01"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            {/* Payment Mode + Reference */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Payment Mode <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={paymentMethod}
-                  onChange={e => setPaymentMethod(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {PAYMENT_METHODS.map(m => (
-                    <option key={m.value} value={m.value}>{m.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Reference / Txn ID</label>
-                <input
-                  type="text"
-                  value={paymentRef}
-                  onChange={e => setPaymentRef(e.target.value)}
-                  placeholder="Optional"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-              <textarea
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                rows={2}
-                placeholder="Optional renewal notes..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
-            )}
-            {success && (
-              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
-                Renewal created successfully!
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="mt-6 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading || success}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-            >
-              {loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>}
-              {loading ? 'Creating...' : 'Create Renewal'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
