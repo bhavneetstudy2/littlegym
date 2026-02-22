@@ -171,6 +171,25 @@ def create_enrollment(
     else:
         effective_center_id = current_user.center_id
 
+    # Duplicate check: same child + same batch + ACTIVE enrollment
+    if enrollment_data.batch_id:
+        existing = db.query(Enrollment).filter(
+            Enrollment.child_id == enrollment_data.child_id,
+            Enrollment.batch_id == enrollment_data.batch_id,
+            Enrollment.status == EnrollmentStatus.ACTIVE,
+            Enrollment.center_id == effective_center_id,
+            Enrollment.is_archived == False,
+        ).first()
+        if existing:
+            # Get child name for error message
+            child = db.query(Child).filter(Child.id == enrollment_data.child_id).first()
+            child_name = f"{child.first_name} {child.last_name or ''}" if child else f"Child #{enrollment_data.child_id}"
+            raise HTTPException(
+                status_code=400,
+                detail=f"Duplicate: {child_name.strip()} already has an ACTIVE enrollment (#{existing.id}) in this batch. "
+                       f"Expire or cancel the existing enrollment first, or choose a different batch."
+            )
+
     try:
         enrollment = EnrollmentService.create_enrollment(
             db=db,
@@ -287,7 +306,9 @@ def get_enrolled_students(
             b.age_min, b.age_max, b.days_of_week,
             b.start_time, b.end_time,
             COALESCE(pay.total_paid, 0) as total_paid,
-            COALESCE(pay.total_discount, 0) as total_discount
+            COALESCE(pay.total_discount, 0) as total_discount,
+            c.age_years,
+            latest_pay.method as payment_method
         FROM enrollments e
         JOIN children c ON e.child_id = c.id
         LEFT JOIN batches b ON e.batch_id = b.id
@@ -298,6 +319,13 @@ def get_enrolled_students(
             FROM payments
             GROUP BY enrollment_id
         ) pay ON pay.enrollment_id = e.id
+        LEFT JOIN LATERAL (
+            SELECT p2.method::text as method
+            FROM payments p2
+            WHERE p2.enrollment_id = e.id
+            ORDER BY p2.paid_at DESC
+            LIMIT 1
+        ) latest_pay ON true
         WHERE {where_sql}
         ORDER BY e.created_at DESC
         LIMIT :lim OFFSET :off
@@ -344,6 +372,7 @@ def get_enrolled_students(
             first_name=row.first_name,
             last_name=row.last_name,
             dob=row.dob,
+            age_years=row.age_years,
             school=row.school,
             interests=row.interests if isinstance(row.interests, list) else (json.loads(row.interests) if row.interests else None),
             notes=row.child_notes
@@ -380,37 +409,167 @@ def get_enrolled_students(
             parents=parents_by_child.get(row.child_id, []),
             batch=batch_info,
             total_paid=Decimal(str(row.total_paid)),
-            total_discount=Decimal(str(row.total_discount))
+            total_discount=Decimal(str(row.total_discount)),
+            payment_method=row.payment_method
         ))
 
     return results
 
 
-@router.get("/expiring/list", response_model=List[EnrollmentResponse])
+@router.get("/expiring/list")
 def get_expiring_enrollments(
     days: int = Query(30, ge=1, le=90),
+    visit_threshold: int = Query(5, ge=1, le=50),
+    include_visit_expiring: bool = Query(True),
+    include_expired: bool = Query(False),
+    search: Optional[str] = Query(None),
     center_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN, UserRole.COUNSELOR))
+    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN, UserRole.CENTER_MANAGER, UserRole.COUNSELOR))
 ):
-    """Get enrollments expiring within specified days"""
+    """Get enrollments expiring by date or visits, with full student details"""
     if current_user.role == UserRole.SUPER_ADMIN:
+        if not center_id:
+            raise HTTPException(status_code=400, detail="center_id required for super admin")
         effective_center_id = center_id
     else:
         effective_center_id = current_user.center_id
 
-    enrollments = EnrollmentService.get_expiring_enrollments(
-        db=db,
-        center_id=effective_center_id,
-        days=days
-    )
-    return enrollments
+    # Build WHERE conditions
+    date_condition = """
+        (e.end_date IS NOT NULL AND e.end_date <= :cutoff AND e.end_date >= CURRENT_DATE)
+    """
+    visit_condition = """
+        (e.visits_included IS NOT NULL AND e.visits_included > 0
+         AND e.visits_included - e.visits_used <= :visit_threshold
+         AND e.visits_included - e.visits_used > 0)
+    """
+
+    expired_condition = """
+        (e.status = 'EXPIRED' OR (e.status = 'ACTIVE' AND e.visits_included IS NOT NULL
+         AND e.visits_used >= e.visits_included))
+    """
+
+    if include_expired:
+        # Show active expiring + already expired
+        if include_visit_expiring:
+            expiry_filter = f"(({date_condition} OR {visit_condition}) OR {expired_condition})"
+        else:
+            expiry_filter = f"({date_condition} OR {expired_condition})"
+    else:
+        if include_visit_expiring:
+            expiry_filter = f"({date_condition} OR {visit_condition})"
+        else:
+            expiry_filter = date_condition
+
+    search_filter = ""
+    params: dict = {
+        'cid': effective_center_id,
+        'cutoff': f"CURRENT_DATE + INTERVAL '{days} days'",
+        'visit_threshold': visit_threshold,
+    }
+
+    if search:
+        search_filter = """AND (
+            LOWER(c.first_name || ' ' || COALESCE(c.last_name, '')) LIKE :search
+            OR LOWER(COALESCE(c.enquiry_id, '')) LIKE :search
+            OR EXISTS (
+                SELECT 1 FROM family_links fl
+                JOIN parents p ON fl.parent_id = p.id
+                WHERE fl.child_id = c.id
+                AND (LOWER(p.name) LIKE :search OR p.phone LIKE :search)
+            )
+        )"""
+        params['search'] = f"%{search.lower()}%"
+
+    sql = f'''
+        SELECT
+            e.id as enrollment_id, e.child_id, e.batch_id, e.plan_type::text, e.status::text,
+            e.start_date, e.end_date, e.visits_included, e.visits_used,
+            e.days_selected,
+            c.enquiry_id, c.first_name, c.last_name, c.age_years,
+            (SELECT p.name FROM family_links fl JOIN parents p ON fl.parent_id = p.id
+             WHERE fl.child_id = c.id ORDER BY fl.is_primary_contact DESC LIMIT 1) as parent_name,
+            (SELECT p.phone FROM family_links fl JOIN parents p ON fl.parent_id = p.id
+             WHERE fl.child_id = c.id ORDER BY fl.is_primary_contact DESC LIMIT 1) as parent_phone,
+            b.name as batch_name,
+            COALESCE(pay.total_paid, 0) as total_paid,
+            CASE WHEN e.end_date IS NOT NULL THEN (e.end_date - CURRENT_DATE) ELSE NULL END as days_remaining,
+            CASE WHEN e.visits_included IS NOT NULL AND e.visits_included > 0
+                 THEN e.visits_included - e.visits_used ELSE NULL END as visits_remaining
+        FROM enrollments e
+        JOIN children c ON e.child_id = c.id
+        LEFT JOIN batches b ON e.batch_id = b.id
+        LEFT JOIN LATERAL (
+            SELECT SUM(p.amount) as total_paid
+            FROM payments p WHERE p.enrollment_id = e.id AND p.is_archived = false
+        ) pay ON true
+        WHERE e.center_id = :cid
+          AND e.status IN ('ACTIVE', 'EXPIRED')
+          AND e.is_archived = false
+          AND {expiry_filter}
+          {search_filter}
+        ORDER BY
+            COALESCE(e.end_date - CURRENT_DATE, e.visits_included - e.visits_used) ASC NULLS LAST
+    '''
+
+    # Use raw SQL with interval expression
+    from datetime import timedelta
+    cutoff_date = __import__('datetime').date.today() + timedelta(days=days)
+    params['cutoff'] = cutoff_date
+
+    rows = db.execute(text(sql), params).fetchall()
+
+    results = []
+    for r in rows:
+        days_rem = r[18]
+        visits_rem = r[19]
+
+        # Determine expiry reason
+        date_expiring = days_rem is not None and days_rem <= days
+        visits_expiring = visits_rem is not None and visits_rem <= visit_threshold
+        if date_expiring and visits_expiring:
+            reason = "both"
+        elif visits_expiring:
+            reason = "visits"
+        else:
+            reason = "date"
+
+        child_name = r[11]
+        if r[12]:
+            child_name += f" {r[12]}"
+
+        results.append({
+            "enrollment_id": r[0],
+            "child_id": r[1],
+            "batch_id": r[2],
+            "plan_type": r[3],
+            "status": r[4],
+            "start_date": str(r[5]) if r[5] else None,
+            "end_date": str(r[6]) if r[6] else None,
+            "visits_included": r[7],
+            "visits_used": r[8],
+            "days_selected": r[9] if isinstance(r[9], list) else (json.loads(r[9]) if isinstance(r[9], str) else None),
+            "enquiry_id": r[10],
+            "child_name": child_name,
+            "age_years": r[13],
+            "parent_name": r[14],
+            "parent_phone": r[15],
+            "batch_name": r[16],
+            "total_paid": float(r[17]) if r[17] else 0,
+            "days_remaining": int(days_rem) if days_rem is not None else None,
+            "visits_remaining": int(visits_rem) if visits_rem is not None else None,
+            "expiry_reason": reason,
+        })
+
+    return results
 
 
 class ChildUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     dob: Optional[date_type] = None
+    age_years: Optional[int] = None
     school: Optional[str] = None
     notes: Optional[str] = None
 
@@ -459,7 +618,7 @@ def update_child(
 def get_master_student_stats(
     center_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN, UserRole.COUNSELOR))
+    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN, UserRole.CENTER_MANAGER, UserRole.COUNSELOR))
 ):
     """Get summary stats for master students view"""
     if current_user.role == UserRole.SUPER_ADMIN:
@@ -516,7 +675,7 @@ def get_master_students(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN, UserRole.COUNSELOR))
+    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN, UserRole.CENTER_MANAGER, UserRole.COUNSELOR))
 ):
     """Get child-centric master students list with enrollment aggregates"""
     if current_user.role == UserRole.SUPER_ADMIN:
@@ -731,9 +890,9 @@ def update_enrollment(
     enrollment_id: int,
     enrollment_data: EnrollmentUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN, UserRole.CENTER_MANAGER))
 ):
-    """Update enrollment information (admin only)"""
+    """Update enrollment information (admin/manager)"""
     enrollment = EnrollmentService.get_enrollment_by_id(db=db, enrollment_id=enrollment_id)
     if not enrollment:
         raise HTTPException(status_code=404, detail="Enrollment not found")

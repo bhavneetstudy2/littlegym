@@ -9,6 +9,7 @@ interface Child {
   first_name: string;
   last_name?: string;
   dob?: string;
+  age_years?: number;
   school?: string;
   interests?: string[];
   notes?: string;
@@ -49,6 +50,7 @@ interface EnrolledStudent {
   batch?: BatchInfo;
   total_paid: number;
   total_discount: number;
+  payment_method?: string;
 }
 
 interface AttendanceRecord {
@@ -126,6 +128,7 @@ const getPlanDisplay = (planType: string) => {
     'WEEKLY': 'Weekly',
     'MONTHLY': 'Monthly',
     'QUARTERLY': 'Quarterly',
+    'SEMI_ANNUALLY': 'Semi-Annual',
     'YEARLY': 'Yearly',
     'CUSTOM': 'Custom'
   };
@@ -150,8 +153,16 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'progress'>('overview');
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({ first_name: '', last_name: '', dob: '', school: '', notes: '' });
+  const [editData, setEditData] = useState({ first_name: '', last_name: '', dob: '', school: '', notes: '', age_years: '' });
   const [saving, setSaving] = useState(false);
+  const [editingParentId, setEditingParentId] = useState<number | null>(null);
+  const [parentEditData, setParentEditData] = useState({ name: '', phone: '', email: '' });
+  const [savingParent, setSavingParent] = useState(false);
+  const [statusChangeId, setStatusChangeId] = useState<number | null>(null);
+  const [statusSaving, setStatusSaving] = useState(false);
+  const [editingEnrollmentId, setEditingEnrollmentId] = useState<number | null>(null);
+  const [enrollmentEditData, setEnrollmentEditData] = useState({ visits_included: '', start_date: '', end_date: '', notes: '' });
+  const [savingEnrollment, setSavingEnrollment] = useState(false);
 
   useEffect(() => {
     if (childId && centerId) {
@@ -221,6 +232,7 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
       dob: childInfo.dob || '',
       school: childInfo.school || '',
       notes: childInfo.notes || '',
+      age_years: childInfo.age_years ? String(childInfo.age_years) : '',
     });
     setIsEditing(true);
   };
@@ -229,13 +241,96 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
     if (!childInfo) return;
     setSaving(true);
     try {
-      await api.patch(`/api/v1/enrollments/children/${childInfo.id}?center_id=${centerId}`, editData);
-      setChildInfo({ ...childInfo, ...editData });
+      const payload = {
+        ...editData,
+        age_years: editData.age_years ? parseInt(editData.age_years) : null,
+      };
+      await api.patch(`/api/v1/enrollments/children/${childInfo.id}?center_id=${centerId}`, payload);
+      setChildInfo({ ...childInfo, ...editData, age_years: editData.age_years ? parseInt(editData.age_years) : undefined });
       setIsEditing(false);
     } catch (err: any) {
       alert(err.message || 'Failed to save');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const startEditingParent = (parent: Parent) => {
+    setParentEditData({
+      name: parent.name || '',
+      phone: parent.phone || '',
+      email: parent.email || '',
+    });
+    setEditingParentId(parent.id);
+  };
+
+  const saveParentEdit = async () => {
+    if (!editingParentId) return;
+    setSavingParent(true);
+    try {
+      await api.patch(`/api/v1/leads/parent/${editingParentId}`, parentEditData);
+      setParents(prev => prev.map(p =>
+        p.id === editingParentId ? { ...p, ...parentEditData } : p
+      ));
+      setEditingParentId(null);
+    } catch (err: any) {
+      alert(err.message || 'Failed to save parent');
+    } finally {
+      setSavingParent(false);
+    }
+  };
+
+  const changeEnrollmentStatus = async (enrollmentId: number, newStatus: string) => {
+    setStatusSaving(true);
+    setStatusChangeId(enrollmentId);
+    try {
+      await api.patch(`/api/v1/enrollments/${enrollmentId}`, { status: newStatus });
+      setAllEnrollments(prev => prev.map(e =>
+        e.enrollment_id === enrollmentId ? { ...e, status: newStatus } : e
+      ));
+    } catch (err: any) {
+      alert(err.message || 'Failed to update status');
+    } finally {
+      setStatusSaving(false);
+      setStatusChangeId(null);
+    }
+  };
+
+  const startEditingEnrollment = (enrollment: EnrolledStudent) => {
+    setEnrollmentEditData({
+      visits_included: enrollment.visits_included ? String(enrollment.visits_included) : '',
+      start_date: enrollment.start_date || '',
+      end_date: enrollment.end_date || '',
+      notes: enrollment.enrollment_notes || '',
+    });
+    setEditingEnrollmentId(enrollment.enrollment_id);
+  };
+
+  const saveEnrollmentEdit = async () => {
+    if (!editingEnrollmentId) return;
+    setSavingEnrollment(true);
+    try {
+      const payload: Record<string, unknown> = {};
+      if (enrollmentEditData.visits_included) payload.visits_included = parseInt(enrollmentEditData.visits_included);
+      if (enrollmentEditData.start_date) payload.start_date = enrollmentEditData.start_date;
+      if (enrollmentEditData.end_date) payload.end_date = enrollmentEditData.end_date;
+      payload.notes = enrollmentEditData.notes || null;
+
+      await api.patch(`/api/v1/enrollments/${editingEnrollmentId}`, payload);
+      setAllEnrollments(prev => prev.map(e =>
+        e.enrollment_id === editingEnrollmentId ? {
+          ...e,
+          visits_included: enrollmentEditData.visits_included ? parseInt(enrollmentEditData.visits_included) : e.visits_included,
+          start_date: enrollmentEditData.start_date || e.start_date,
+          end_date: enrollmentEditData.end_date || e.end_date,
+          enrollment_notes: enrollmentEditData.notes || undefined,
+        } : e
+      ));
+      setEditingEnrollmentId(null);
+    } catch (err: any) {
+      alert(err.message || 'Failed to update enrollment');
+    } finally {
+      setSavingEnrollment(false);
     }
   };
 
@@ -324,7 +419,7 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
                 )}
               </h2>
               <p className="text-sm text-gray-500">
-                {age ? `${age} years` : ''}
+                {age ? `${age} years` : childInfo.age_years ? `${childInfo.age_years} years` : ''}
                 {primaryParent ? ` | ${primaryParent.name} (${primaryParent.phone})` : ''}
                 {` | ${allEnrollments.length} enrollment${allEnrollments.length > 1 ? 's' : ''}`}
               </p>
@@ -447,6 +542,10 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
                     <input type="date" value={editData.dob} onChange={e => setEditData({...editData, dob: e.target.value})} className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" />
                   </div>
                   <div>
+                    <label className="text-gray-500 text-sm block mb-1">Age (years)</label>
+                    <input type="number" value={editData.age_years} onChange={e => setEditData({...editData, age_years: e.target.value})} min="0" max="25" className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" placeholder="e.g. 5" />
+                  </div>
+                  <div>
                     <label className="text-gray-500 text-sm block mb-1">School</label>
                     <input type="text" value={editData.school} onChange={e => setEditData({...editData, school: e.target.value})} className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" />
                   </div>
@@ -466,8 +565,14 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
                     <p className="font-medium text-blue-600">{childInfo.enquiry_id || '-'}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500 text-sm">Date of Birth</span>
-                    <p className="font-medium">{childInfo.dob ? `${formatDate(childInfo.dob)} (${age} years)` : '-'}</p>
+                    <span className="text-gray-500 text-sm">Date of Birth / Age</span>
+                    <p className="font-medium">
+                      {childInfo.dob
+                        ? `${formatDate(childInfo.dob)} (${age} years)`
+                        : childInfo.age_years
+                          ? `${childInfo.age_years} years`
+                          : '-'}
+                    </p>
                   </div>
                   <div>
                     <span className="text-gray-500 text-sm">School</span>
@@ -493,25 +598,58 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
               <div className="space-y-4">
                 {parents.map((parent, idx) => (
                   <div key={idx} className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-semibold">{parent.name}</span>
-                      {parent.is_primary_contact && (
-                        <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">Primary</span>
-                      )}
-                      {parent.relationship_type && (
-                        <span className="text-gray-500 text-sm">({parent.relationship_type})</span>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
+                    {editingParentId === parent.id ? (
                       <div>
-                        <span className="text-gray-500">Phone:</span>{' '}
-                        <a href={`tel:${parent.phone}`} className="text-blue-600 font-medium">{parent.phone}</a>
+                        <div className="grid grid-cols-3 gap-3 mb-3">
+                          <div>
+                            <label className="text-gray-500 text-xs block mb-1">Name</label>
+                            <input type="text" value={parentEditData.name} onChange={e => setParentEditData({...parentEditData, name: e.target.value})} className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                          </div>
+                          <div>
+                            <label className="text-gray-500 text-xs block mb-1">Phone</label>
+                            <input type="text" value={parentEditData.phone} onChange={e => setParentEditData({...parentEditData, phone: e.target.value})} className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                          </div>
+                          <div>
+                            <label className="text-gray-500 text-xs block mb-1">Email</label>
+                            <input type="text" value={parentEditData.email} onChange={e => setParentEditData({...parentEditData, email: e.target.value})} className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" />
+                          </div>
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                          <button onClick={() => setEditingParentId(null)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 border border-gray-300 rounded">Cancel</button>
+                          <button onClick={saveParentEdit} disabled={savingParent} className="text-sm text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded disabled:opacity-50">
+                            {savingParent ? 'Saving...' : 'Save'}
+                          </button>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-gray-500">Email:</span>{' '}
-                        <span className="font-medium">{parent.email || '-'}</span>
-                      </div>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{parent.name}</span>
+                            {parent.is_primary_contact && (
+                              <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">Primary</span>
+                            )}
+                            {parent.relationship_type && (
+                              <span className="text-gray-500 text-sm">({parent.relationship_type})</span>
+                            )}
+                          </div>
+                          <button onClick={() => startEditingParent(parent)} className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                            Edit
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-gray-500">Phone:</span>{' '}
+                            <a href={`tel:${parent.phone}`} className="text-blue-600 font-medium">{parent.phone}</a>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Email:</span>{' '}
+                            <span className="font-medium">{parent.email || '-'}</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
@@ -544,40 +682,130 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
                             {getPlanDisplay(enrollment.plan_type)}
                           </span>
                         </div>
-                        <div className="text-sm text-gray-500">
-                          #{enrollment.enrollment_id}
+                        <div className="flex items-center gap-2">
+                          {enrollment.status === 'ACTIVE' && (
+                            <>
+                              <button
+                                onClick={() => changeEnrollmentStatus(enrollment.enrollment_id, 'PAUSED')}
+                                disabled={statusSaving && statusChangeId === enrollment.enrollment_id}
+                                className="text-xs px-2 py-1 border border-yellow-300 text-yellow-700 rounded hover:bg-yellow-50 disabled:opacity-50"
+                              >
+                                Pause
+                              </button>
+                              <button
+                                onClick={() => changeEnrollmentStatus(enrollment.enrollment_id, 'CANCELLED')}
+                                disabled={statusSaving && statusChangeId === enrollment.enrollment_id}
+                                className="text-xs px-2 py-1 border border-red-300 text-red-700 rounded hover:bg-red-50 disabled:opacity-50"
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          )}
+                          {enrollment.status === 'PAUSED' && (
+                            <button
+                              onClick={() => changeEnrollmentStatus(enrollment.enrollment_id, 'ACTIVE')}
+                              disabled={statusSaving && statusChangeId === enrollment.enrollment_id}
+                              className="text-xs px-2 py-1 border border-green-300 text-green-700 rounded hover:bg-green-50 disabled:opacity-50"
+                            >
+                              Reactivate
+                            </button>
+                          )}
+                          {(enrollment.status === 'EXPIRED' || enrollment.status === 'CANCELLED') && (
+                            <button
+                              onClick={() => changeEnrollmentStatus(enrollment.enrollment_id, 'ACTIVE')}
+                              disabled={statusSaving && statusChangeId === enrollment.enrollment_id}
+                              className="text-xs px-2 py-1 border border-green-300 text-green-700 rounded hover:bg-green-50 disabled:opacity-50"
+                            >
+                              Reactivate
+                            </button>
+                          )}
+                          <button
+                            onClick={() => startEditingEnrollment(enrollment)}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            Edit
+                          </button>
+                          <span className="text-sm text-gray-500">#{enrollment.enrollment_id}</span>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                        <div>
-                          <span className="text-gray-500">Period:</span>{' '}
-                          <span className="font-medium">
-                            {formatDate(enrollment.start_date)} - {formatDate(enrollment.end_date)}
-                          </span>
+                      {editingEnrollmentId === enrollment.enrollment_id ? (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div>
+                              <label className="text-gray-500 text-xs block mb-1">Booked Classes</label>
+                              <input type="number" value={enrollmentEditData.visits_included} onChange={e => setEnrollmentEditData({...enrollmentEditData, visits_included: e.target.value})} min="1" className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm" />
+                            </div>
+                            <div>
+                              <label className="text-gray-500 text-xs block mb-1">Start Date</label>
+                              <input type="date" value={enrollmentEditData.start_date} onChange={e => setEnrollmentEditData({...enrollmentEditData, start_date: e.target.value})} className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm" />
+                            </div>
+                            <div>
+                              <label className="text-gray-500 text-xs block mb-1">End Date</label>
+                              <input type="date" value={enrollmentEditData.end_date} onChange={e => setEnrollmentEditData({...enrollmentEditData, end_date: e.target.value})} className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm" />
+                            </div>
+                            <div className="flex items-end gap-2 pb-0.5">
+                              <span className="text-sm text-gray-500">Attended: <strong className="text-green-700">{enrollment.visits_used}</strong></span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-gray-500 text-xs block mb-1">Notes</label>
+                            <textarea value={enrollmentEditData.notes} onChange={e => setEnrollmentEditData({...enrollmentEditData, notes: e.target.value})} rows={2} className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm" placeholder="Enrollment notes..." />
+                          </div>
+                          <div className="flex gap-2 justify-end">
+                            <button onClick={() => setEditingEnrollmentId(null)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 border border-gray-300 rounded">Cancel</button>
+                            <button onClick={saveEnrollmentEdit} disabled={savingEnrollment} className="text-sm text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded disabled:opacity-50">
+                              {savingEnrollment ? 'Saving...' : 'Save'}
+                            </button>
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-gray-500">Booked:</span>{' '}
-                          <span className="font-medium">{enrollment.visits_included || '-'}</span>
+                      ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                          <div>
+                            <span className="text-gray-500">Period:</span>{' '}
+                            <span className="font-medium">
+                              {formatDate(enrollment.start_date)} - {formatDate(enrollment.end_date)}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Booked:</span>{' '}
+                            <span className="font-medium">{enrollment.visits_included || '-'}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Attended:</span>{' '}
+                            <span className="font-medium text-green-700">{enrollment.visits_used}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Remaining:</span>{' '}
+                            <span className={`font-medium ${remaining === 0 && isActive ? 'text-red-600' : 'text-orange-600'}`}>
+                              {remaining}
+                            </span>
+                          </div>
+                          {enrollment.days_selected && enrollment.days_selected.length > 0 && (
+                            <div className="col-span-2">
+                              <span className="text-gray-500">Days:</span>{' '}
+                              <span className="font-medium">{enrollment.days_selected.join(', ')}</span>
+                            </div>
+                          )}
+                          <div>
+                            <span className="text-gray-500">Enrolled:</span>{' '}
+                            <span className="font-medium">{formatDate(enrollment.enrolled_at)}</span>
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-gray-500">Attended:</span>{' '}
-                          <span className="font-medium text-green-700">{enrollment.visits_used}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Remaining:</span>{' '}
-                          <span className={`font-medium ${remaining === 0 && isActive ? 'text-red-600' : 'text-orange-600'}`}>
-                            {remaining}
-                          </span>
-                        </div>
-                      </div>
+                      )}
 
-                      {(enrollment.total_paid > 0 || enrollment.total_discount > 0) && (
+                      {(enrollment.total_paid > 0 || enrollment.total_discount > 0 || enrollment.payment_method) && (
                         <div className="mt-2 pt-2 border-t border-gray-200 flex gap-4 text-sm">
                           <div>
                             <span className="text-gray-500">Paid:</span>{' '}
                             <span className="font-medium text-green-600">Rs.{enrollment.total_paid.toLocaleString()}</span>
                           </div>
+                          {enrollment.payment_method && (
+                            <div>
+                              <span className="text-gray-500">Mode:</span>{' '}
+                              <span className="font-medium">{enrollment.payment_method.replace('_', ' ')}</span>
+                            </div>
+                          )}
                           {enrollment.total_discount > 0 && (
                             <div>
                               <span className="text-gray-500">Discount:</span>{' '}

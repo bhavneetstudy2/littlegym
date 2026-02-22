@@ -271,10 +271,14 @@ def get_batch_students_with_summary(
         if not child:
             continue
 
-        classes_remaining = max(0, (enrollment.visits_included or 0) - (enrollment.visits_used or 0))
+        # If visits_included is NULL, treat as unlimited (date-based plan)
+        if enrollment.visits_included is not None:
+            classes_remaining = max(0, enrollment.visits_included - (enrollment.visits_used or 0))
+        else:
+            classes_remaining = 999  # unlimited
 
         # Skip exhausted students unless explicitly requested
-        if not include_exhausted and classes_remaining <= 0:
+        if not include_exhausted and enrollment.visits_included is not None and classes_remaining <= 0:
             continue
 
         results.append(BatchStudentSummary(

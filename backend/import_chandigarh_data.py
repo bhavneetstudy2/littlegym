@@ -305,11 +305,8 @@ print(f"  Tracker sheet: {len([k for k,v in master_children.items() if 'Tracker'
 
 print(f"\nOK Total unique children in master registry: {len(master_children)}")
 
-# Calculate DOB from age if missing
-for enquiry_id, child in master_children.items():
-    if not child['dob'] and child['age']:
-        ref_date = child['enquiry_date'] or date.today()
-        child['dob'] = calculate_dob_from_age(child['age'], ref_date)
+# Note: Using age_years field directly instead of calculating DOB from age
+# DOB will be calculated on-the-fly in the application when needed
 
 print("\nMaster registry built successfully!")
 print(f"Ready to import {len(master_children)} children to database")

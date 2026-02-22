@@ -46,8 +46,8 @@ for idx, (enquiry_id, child_data) in enumerate(master_children.items(), 1):
     try:
         # Insert Child
         child_insert = text("""
-            INSERT INTO children (center_id, first_name, last_name, dob, school, interests, notes, external_id, is_archived, created_by_id, updated_by_id, created_at, updated_at)
-            VALUES (:center_id, :first_name, :last_name, :dob, :school, :interests, :notes, :external_id, FALSE, :created_by_id, :updated_by_id, NOW(), NOW())
+            INSERT INTO children (center_id, first_name, last_name, dob, age_years, school, interests, notes, enquiry_id, is_archived, created_by_id, updated_by_id, created_at, updated_at)
+            VALUES (:center_id, :first_name, :last_name, :dob, :age_years, :school, :interests, :notes, :enquiry_id, FALSE, :created_by_id, :updated_by_id, NOW(), NOW())
             RETURNING id
         """)
 
@@ -67,10 +67,11 @@ for idx, (enquiry_id, child_data) in enumerate(master_children.items(), 1):
             "first_name": (child_data['child_first_name'] or 'Unknown')[:100],
             "last_name": (child_data['child_last_name'] or '')[:100] if child_data['child_last_name'] else None,
             "dob": child_data['dob'],
+            "age_years": child_data['age'],
             "school": (child_data['school'] or '')[:200] if child_data['school'] else None,
             "interests": interests_json,
             "notes": (child_data['remarks'] or '')[:1000] if child_data['remarks'] else None,
-            "external_id": enquiry_id[:50],
+            "enquiry_id": enquiry_id[:50],
             "created_by_id": created_by_id,
             "updated_by_id": created_by_id
         }).scalar()

@@ -157,8 +157,14 @@ class EnrollmentService:
             enrollment.batch_id = enrollment_data.batch_id
         if enrollment_data.status is not None:
             enrollment.status = enrollment_data.status
+        if enrollment_data.start_date is not None:
+            enrollment.start_date = enrollment_data.start_date
         if enrollment_data.end_date is not None:
             enrollment.end_date = enrollment_data.end_date
+        if enrollment_data.visits_included is not None:
+            enrollment.visits_included = enrollment_data.visits_included
+        if enrollment_data.days_selected is not None:
+            enrollment.days_selected = enrollment_data.days_selected
         if enrollment_data.notes is not None:
             enrollment.notes = enrollment_data.notes
 

@@ -108,7 +108,10 @@ class EnrollmentCreate(EnrollmentBase):
 class EnrollmentUpdate(BaseModel):
     batch_id: Optional[int] = None
     status: Optional[EnrollmentStatus] = None
+    start_date: Optional[date] = None
     end_date: Optional[date] = None
+    visits_included: Optional[int] = None
+    days_selected: Optional[List[str]] = None
     notes: Optional[str] = None
 
 
@@ -196,6 +199,7 @@ class EnrolledStudentResponse(BaseModel):
     # Payment summary
     total_paid: Decimal
     total_discount: Decimal
+    payment_method: Optional[str] = None
 
 
 # Master Students schemas
@@ -231,3 +235,36 @@ class MasterStudentsStatsResponse(BaseModel):
     new_count: int
     renewal_count: int
     by_status: dict  # { "ACTIVE": N, "EXPIRED": N, ... }
+
+
+# Expiring / Renewal-ready enrollment
+class ExpiringEnrollmentResponse(BaseModel):
+    # Enrollment
+    enrollment_id: int
+    child_id: int
+    batch_id: Optional[int] = None
+    plan_type: str
+    status: str
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    visits_included: Optional[int] = None
+    visits_used: int = 0
+    days_selected: Optional[List[str]] = None
+
+    # Child
+    enquiry_id: Optional[str] = None
+    child_name: str
+    age_years: Optional[int] = None
+
+    # Parent
+    parent_name: Optional[str] = None
+    parent_phone: Optional[str] = None
+
+    # Batch
+    batch_name: Optional[str] = None
+
+    # Computed
+    days_remaining: Optional[int] = None
+    visits_remaining: Optional[int] = None
+    total_paid: float = 0
+    expiry_reason: str  # "date" or "visits" or "both"

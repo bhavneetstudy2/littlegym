@@ -69,6 +69,7 @@ export default function ConvertToEnrollmentModal({
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [paymentRef, setPaymentRef] = useState('');
   const [notes, setNotes] = useState('');
+  const [childAge, setChildAge] = useState('');
 
   useEffect(() => {
     fetchBatches();
@@ -128,6 +129,7 @@ export default function ConvertToEnrollmentModal({
 
     // Validation
     if (!batchId) { setError('Please select a batch'); return; }
+    if (!bookedClasses || parseInt(bookedClasses) <= 0) { setError('Booked classes is required'); return; }
     if (!totalAmount || parseFloat(totalAmount) <= 0) { setError('Total amount is required'); return; }
     if (!paidAmount) { setError('Paid amount is required'); return; }
 
@@ -157,6 +159,17 @@ export default function ConvertToEnrollmentModal({
       });
 
       await api.post(`/api/v1/enrollments?${params}`, payload);
+
+      // Update child's age if provided
+      if (childAge) {
+        try {
+          await api.patch(`/api/v1/enrollments/children/${childId}?center_id=${selectedCenter!.id}`, {
+            age_years: parseInt(childAge),
+          });
+        } catch {
+          // Non-critical: enrollment still created
+        }
+      }
 
       setSuccess(true);
       setTimeout(() => {
@@ -207,6 +220,22 @@ export default function ConvertToEnrollmentModal({
               </select>
             </div>
 
+            {/* Age */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Child&apos;s Age (years)
+              </label>
+              <input
+                type="number"
+                value={childAge}
+                onChange={(e) => setChildAge(e.target.value)}
+                placeholder="e.g. 5"
+                min="0"
+                max="25"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+
             {/* Days */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Days</label>
@@ -246,15 +275,15 @@ export default function ConvertToEnrollmentModal({
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Booked Classes {planType === 'PAY_PER_VISIT' && <span className="text-red-500">*</span>}
+                  Booked Classes <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
                   value={bookedClasses}
                   onChange={(e) => setBookedClasses(e.target.value)}
-                  placeholder="e.g. 12"
+                  placeholder="e.g. 24"
                   min="1"
-                  required={planType === 'PAY_PER_VISIT'}
+                  required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
