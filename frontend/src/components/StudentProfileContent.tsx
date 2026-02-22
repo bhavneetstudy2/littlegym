@@ -410,6 +410,14 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
         },
       };
       await api.post(`/api/v1/enrollments?center_id=${centerId}`, payload);
+      // Mark old enrollment as EXPIRED
+      if (renewingEnrollmentId) {
+        try {
+          await api.patch(`/api/v1/enrollments/${renewingEnrollmentId}`, { status: 'EXPIRED' });
+        } catch {
+          // Non-critical: old enrollment may already be expired
+        }
+      }
       setRenewingEnrollmentId(null);
       fetchStudentData(); // refresh all data
     } catch (err: any) {
@@ -489,11 +497,11 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
   const totalSessions = attendance.length;
   const overallRate = totalSessions > 0 ? Math.round((totalPresent / totalSessions) * 100) : 0;
 
-  // Total stats across all enrollments
-  const totalBooked = allEnrollments.reduce((sum, e) => sum + (e.visits_included || 0), 0);
-  const totalAttended = allEnrollments.reduce((sum, e) => sum + (e.visits_used || 0), 0);
-  const totalRemaining = allEnrollments.reduce((sum, e) => sum + Math.max(0, (e.visits_included || 0) - (e.visits_used || 0)), 0);
+  // Stats: active enrollments for remaining, all for totals
   const activeEnrollments = allEnrollments.filter(e => e.status === 'ACTIVE');
+  const totalBooked = activeEnrollments.reduce((sum, e) => sum + (e.visits_included || 0), 0);
+  const totalAttended = activeEnrollments.reduce((sum, e) => sum + (e.visits_used || 0), 0);
+  const totalRemaining = activeEnrollments.reduce((sum, e) => sum + Math.max(0, (e.visits_included || 0) - (e.visits_used || 0)), 0);
 
   return (
     <>

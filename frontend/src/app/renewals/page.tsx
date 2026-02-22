@@ -437,6 +437,12 @@ function RenewEnrollmentModal({
       });
 
       await api.post(`/api/v1/enrollments?${params}`, payload);
+      // Mark old enrollment as EXPIRED
+      try {
+        await api.patch(`/api/v1/enrollments/${enrollment.enrollment_id}`, { status: 'EXPIRED' });
+      } catch {
+        // Non-critical: old enrollment may already be expired
+      }
       setSuccess(true);
       setTimeout(() => onSuccess(), 1200);
     } catch (err: any) {

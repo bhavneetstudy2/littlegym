@@ -350,14 +350,22 @@ def quick_mark_attendance(
             Attendance.child_id.in_(child_ids)
         ).all()
     }
-    enrollment_map = {
-        enr.child_id: enr
-        for enr in db.query(Enrollment).filter(
-            Enrollment.child_id.in_(child_ids),
-            Enrollment.batch_id == data.batch_id,
-            Enrollment.center_id == effective_center_id
-        ).all()
-    }
+    # Prefer ACTIVE enrollment; fall back to any enrollment for the batch
+    all_enrollments = db.query(Enrollment).filter(
+        Enrollment.child_id.in_(child_ids),
+        Enrollment.batch_id == data.batch_id,
+        Enrollment.center_id == effective_center_id
+    ).all()
+    enrollment_map: dict = {}
+    for enr in all_enrollments:
+        existing = enrollment_map.get(enr.child_id)
+        # ACTIVE always wins; otherwise keep latest
+        if existing is None:
+            enrollment_map[enr.child_id] = enr
+        elif enr.status == EnrollmentStatus.ACTIVE and existing.status != EnrollmentStatus.ACTIVE:
+            enrollment_map[enr.child_id] = enr
+        elif enr.status == existing.status and enr.id > existing.id:
+            enrollment_map[enr.child_id] = enr
 
     # Mark attendance for each child
     results = []
