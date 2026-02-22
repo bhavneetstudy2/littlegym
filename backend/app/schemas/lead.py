@@ -100,6 +100,7 @@ class LeadCreate(LeadBase):
     child_first_name: str
     child_last_name: Optional[str] = None
     child_dob: Optional[date] = None
+    child_age_years: Optional[int] = None
     child_school: Optional[str] = None
     child_interests: Optional[List[str]] = None
     child_notes: Optional[str] = None

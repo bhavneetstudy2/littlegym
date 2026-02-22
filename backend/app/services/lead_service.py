@@ -77,6 +77,7 @@ class LeadService:
                 first_name=lead_data.child_first_name,
                 last_name=lead_data.child_last_name,
                 dob=lead_data.child_dob,
+                age_years=getattr(lead_data, 'child_age_years', None),
                 school=lead_data.child_school,
                 interests=lead_data.child_interests,
                 notes=lead_data.child_notes,

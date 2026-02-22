@@ -459,12 +459,20 @@ function CreateEnrollmentModal({
     first_name: '',
     last_name: '',
     dob: '',
-    school: ''
+    school: '',
+    age_years: ''
   });
   const [parentData, setParentData] = useState({
     name: '',
     phone: '',
     email: ''
+  });
+  const [showSecondParent, setShowSecondParent] = useState(false);
+  const [parent2Data, setParent2Data] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    relationship_type: ''
   });
   const [enrollmentData, setEnrollmentData] = useState({
     batch_id: '',
@@ -513,16 +521,25 @@ function CreateEnrollmentModal({
 
     try {
       // First create a lead (which creates child + parent)
+      const parentsPayload = [{
+        name: parentData.name,
+        phone: parentData.phone,
+        email: parentData.email || null
+      }];
+      if (showSecondParent && parent2Data.name && parent2Data.phone) {
+        parentsPayload.push({
+          name: parent2Data.name,
+          phone: parent2Data.phone,
+          email: parent2Data.email || null
+        });
+      }
       const leadRes = await api.post<{ id: number; child_id: number }>('/api/v1/leads', {
         child_first_name: childData.first_name,
         child_last_name: childData.last_name || null,
         child_dob: childData.dob || null,
         child_school: childData.school || null,
-        parents: [{
-          name: parentData.name,
-          phone: parentData.phone,
-          email: parentData.email || null
-        }],
+        child_age_years: childData.age_years ? parseInt(childData.age_years) : null,
+        parents: parentsPayload,
         source: 'WALK_IN',
         center_id: centerId
       });
@@ -637,6 +654,18 @@ function CreateEnrollmentModal({
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                       />
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Age (years)</label>
+                      <input
+                        type="number"
+                        value={childData.age_years}
+                        onChange={(e) => setChildData({ ...childData, age_years: e.target.value })}
+                        placeholder="e.g. 5"
+                        min="0"
+                        max="25"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -674,6 +703,76 @@ function CreateEnrollmentModal({
                       />
                     </div>
                   </div>
+
+                  {/* Second Parent Toggle */}
+                  {!showSecondParent ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowSecondParent(true)}
+                      className="mt-3 text-sm text-green-600 hover:text-green-800 font-medium flex items-center gap-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Add Second Parent/Guardian
+                    </button>
+                  ) : (
+                    <div className="mt-3 pt-3 border-t border-green-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-medium text-green-700">Second Parent/Guardian</h4>
+                        <button
+                          type="button"
+                          onClick={() => { setShowSecondParent(false); setParent2Data({ name: '', phone: '', email: '', relationship_type: '' }); }}
+                          className="text-xs text-red-500 hover:text-red-700"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                          <input
+                            type="text"
+                            value={parent2Data.name}
+                            onChange={(e) => setParent2Data({ ...parent2Data, name: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                          <input
+                            type="tel"
+                            value={parent2Data.phone}
+                            onChange={(e) => setParent2Data({ ...parent2Data, phone: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                          <input
+                            type="email"
+                            value={parent2Data.email}
+                            onChange={(e) => setParent2Data({ ...parent2Data, email: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Relationship</label>
+                          <select
+                            value={parent2Data.relationship_type}
+                            onChange={(e) => setParent2Data({ ...parent2Data, relationship_type: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          >
+                            <option value="">Select</option>
+                            <option value="mother">Mother</option>
+                            <option value="father">Father</option>
+                            <option value="guardian">Guardian</option>
+                            <option value="other">Other</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end">
