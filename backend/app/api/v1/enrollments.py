@@ -650,7 +650,7 @@ def get_master_student_stats(
             SELECT DISTINCT ON (e.child_id) e.child_id, e.status
             FROM enrollments e
             WHERE e.center_id = :cid AND e.is_archived = false
-            ORDER BY e.child_id, e.start_date DESC NULLS LAST, e.created_at DESC
+            ORDER BY e.child_id, e.created_at DESC, e.id DESC
         ) latest
         GROUP BY latest.status
     '''), {'cid': effective_center_id}).fetchall()
@@ -730,7 +730,7 @@ def get_master_students(
                        e2.start_date, e2.end_date, e2.visits_included, e2.visits_used, e2.created_at
                 FROM enrollments e2
                 WHERE e2.child_id = c.id AND e2.is_archived = false AND e2.center_id = :cid
-                ORDER BY e2.start_date DESC NULLS LAST, e2.created_at DESC
+                ORDER BY e2.created_at DESC, e2.id DESC
                 LIMIT 1
             ) latest_e ON true
             WHERE {where_sql}
@@ -767,7 +767,7 @@ def get_master_students(
                    e2.start_date, e2.end_date, e2.visits_included, e2.visits_used, e2.created_at
             FROM enrollments e2
             WHERE e2.child_id = c.id AND e2.is_archived = false AND e2.center_id = :cid
-            ORDER BY e2.start_date DESC NULLS LAST, e2.created_at DESC
+            ORDER BY e2.created_at DESC, e2.id DESC
             LIMIT 1
         ) latest_e ON true
         LEFT JOIN batches b ON latest_e.batch_id = b.id
