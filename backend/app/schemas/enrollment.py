@@ -21,6 +21,17 @@ class BatchCreate(BatchBase):
     pass
 
 
+class BatchUpdate(BaseModel):
+    name: Optional[str] = None
+    age_min: Optional[int] = None
+    age_max: Optional[int] = None
+    days_of_week: Optional[List[str]] = None
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+    capacity: Optional[int] = None
+    active: Optional[bool] = None
+
+
 class BatchResponse(BatchBase):
     model_config = ConfigDict(from_attributes=True)
 
@@ -128,6 +139,7 @@ class ChildInfo(BaseModel):
     first_name: str
     last_name: Optional[str] = None
     dob: Optional[date] = None
+    age_years: Optional[int] = None
     school: Optional[str] = None
     interests: Optional[List[str]] = None
     notes: Optional[str] = None

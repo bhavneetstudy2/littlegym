@@ -12,6 +12,7 @@ from app.models.user import User
 from app.models.child import Child
 from app.schemas.enrollment import (
     BatchCreate,
+    BatchUpdate,
     BatchResponse,
     EnrollmentCreate,
     EnrollmentUpdate,
@@ -88,6 +89,68 @@ def get_batches(
         query = query.filter(Batch.active == True)
 
     return query.order_by(Batch.name).all()
+
+
+@router.patch("/batches/{batch_id}", response_model=BatchResponse)
+def update_batch(
+    batch_id: int,
+    batch_data: BatchUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN))
+):
+    """Update a batch"""
+    batch = db.query(Batch).filter(Batch.id == batch_id).first()
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+
+    # Authorization check
+    if current_user.role != UserRole.SUPER_ADMIN and batch.center_id != current_user.center_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    update_data = batch_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(batch, key, value)
+    batch.updated_by_id = current_user.id
+
+    db.commit()
+    db.refresh(batch)
+    return batch
+
+
+@router.delete("/batches/{batch_id}")
+def delete_batch(
+    batch_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN))
+):
+    """Delete a batch (soft delete by marking inactive, or hard delete if no references)"""
+    batch = db.query(Batch).filter(Batch.id == batch_id).first()
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+
+    # Authorization check
+    if current_user.role != UserRole.SUPER_ADMIN and batch.center_id != current_user.center_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    # Check for references
+    from app.models import Enrollment, ClassSession
+    from app.models.intro_visit import IntroVisit
+
+    enrollment_count = db.query(Enrollment).filter(Enrollment.batch_id == batch_id).count()
+    session_count = db.query(ClassSession).filter(ClassSession.batch_id == batch_id).count()
+    iv_count = db.query(IntroVisit).filter(IntroVisit.batch_id == batch_id).count()
+
+    if enrollment_count > 0 or session_count > 0 or iv_count > 0:
+        # Soft delete - mark as inactive
+        batch.active = False
+        batch.updated_by_id = current_user.id
+        db.commit()
+        return {"detail": "Batch deactivated (has existing references)", "deactivated": True}
+
+    # Hard delete if no references
+    db.delete(batch)
+    db.commit()
+    return {"detail": "Batch deleted", "deactivated": False}
 
 
 # Enrollment Endpoints

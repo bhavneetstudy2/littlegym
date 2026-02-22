@@ -69,6 +69,7 @@ class PlanType(str, Enum):
     WEEKLY = "WEEKLY"
     MONTHLY = "MONTHLY"
     QUARTERLY = "QUARTERLY"
+    SEMI_ANNUALLY = "SEMI_ANNUALLY"
     YEARLY = "YEARLY"
     CUSTOM = "CUSTOM"
 

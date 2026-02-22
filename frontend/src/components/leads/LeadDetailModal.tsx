@@ -1,11 +1,27 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useCenter } from '@/contexts/CenterContext';
 import type { Lead, LeadDetail, IntroVisit, FollowUp, Parent } from '@/types/leads';
 import { STATUS_CONFIGS, IV_OUTCOME_LABELS, FOLLOW_UP_OUTCOME_LABELS } from '@/types/leads';
 import EditChildModal from './EditChildModal';
 import EditParentModal from './EditParentModal';
+
+interface EnrollmentInfo {
+  enrollment_id: number;
+  plan_type: string;
+  status: string;
+  start_date?: string;
+  end_date?: string;
+  visits_included?: number;
+  visits_used: number;
+  enrollment_notes?: string;
+  batch?: { id: number; name: string };
+  total_paid: number;
+  total_discount: number;
+}
 
 interface LeadActivity {
   id: number;
@@ -87,8 +103,12 @@ export default function LeadDetailModal({
   onCloseLead,
   onRefresh,
 }: LeadDetailModalProps) {
+  const router = useRouter();
+  const { selectedCenter } = useCenter();
   const [activities, setActivities] = useState<LeadActivity[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(true);
+  const [enrollments, setEnrollments] = useState<EnrollmentInfo[]>([]);
+  const [loadingEnrollments, setLoadingEnrollments] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'timeline'>('details');
   const [showEditChildModal, setShowEditChildModal] = useState(false);
   const [showEditParentModal, setShowEditParentModal] = useState(false);
@@ -102,6 +122,7 @@ export default function LeadDetailModal({
 
   useEffect(() => {
     fetchActivities();
+    fetchEnrollments();
   }, [leadProp.id]);
 
   const fetchActivities = async () => {
@@ -114,6 +135,47 @@ export default function LeadDetailModal({
     } finally {
       setLoadingActivities(false);
     }
+  };
+
+  const fetchEnrollments = async () => {
+    if (!child?.id) return;
+    const centerId = selectedCenter?.id || leadProp.center_id;
+    if (!centerId) return;
+
+    setLoadingEnrollments(true);
+    try {
+      const data = await api.get<EnrollmentInfo[]>(
+        `/api/v1/enrollments/students?center_id=${centerId}&child_id=${child.id}`
+      );
+      setEnrollments(data);
+    } catch {
+      setEnrollments([]);
+    } finally {
+      setLoadingEnrollments(false);
+    }
+  };
+
+  const getPlanDisplay = (planType: string) => {
+    const types: Record<string, string> = {
+      'PAY_PER_VISIT': 'Per Visit',
+      'WEEKLY': 'Weekly',
+      'MONTHLY': 'Monthly',
+      'QUARTERLY': 'Quarterly',
+      'SEMI_ANNUALLY': 'Semi-Annual',
+      'YEARLY': 'Yearly',
+      'CUSTOM': 'Custom'
+    };
+    return types[planType] || planType;
+  };
+
+  const getStatusBadge = (status: string) => {
+    const styles: Record<string, string> = {
+      'ACTIVE': 'bg-green-100 text-green-800',
+      'EXPIRED': 'bg-red-100 text-red-800',
+      'PAUSED': 'bg-yellow-100 text-yellow-800',
+      'CANCELLED': 'bg-gray-100 text-gray-800',
+    };
+    return styles[status] || 'bg-gray-100 text-gray-800';
   };
 
   return (
@@ -439,6 +501,100 @@ export default function LeadDetailModal({
                   </p>
                 </div>
               )}
+
+              {/* Enrollment & Payment Information */}
+              {loadingEnrollments ? (
+                <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  Loading enrollment data...
+                </div>
+              ) : enrollments.length > 0 && (
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center justify-between mb-4 border-b pb-2">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Enrollments ({enrollments.length})
+                    </h3>
+                    {child?.id && (
+                      <button
+                        onClick={() => {
+                          onClose();
+                          router.push(`/students/${child.id}`);
+                        }}
+                        className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"
+                      >
+                        View Full Profile
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-4">
+                    {enrollments.map((enrollment) => (
+                      <div key={enrollment.enrollment_id} className="border rounded-lg p-4 bg-gray-50">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            {enrollment.batch && (
+                              <span className="px-2 py-1 bg-orange-100 text-orange-700 text-sm rounded font-medium">
+                                {enrollment.batch.name}
+                              </span>
+                            )}
+                            <span className="px-2 py-1 bg-purple-100 text-purple-700 text-sm rounded">
+                              {getPlanDisplay(enrollment.plan_type)}
+                            </span>
+                          </div>
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadge(enrollment.status)}`}>
+                            {enrollment.status}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                          <div>
+                            <span className="text-gray-500">Start Date</span>
+                            <p className="font-medium">{formatDate(enrollment.start_date)}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">End Date</span>
+                            <p className="font-medium">{formatDate(enrollment.end_date)}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Classes</span>
+                            <p className="font-medium">
+                              {enrollment.visits_used}/{enrollment.visits_included || '-'} used
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Remaining</span>
+                            <p className="font-medium text-orange-600">
+                              {enrollment.visits_included
+                                ? enrollment.visits_included - enrollment.visits_used
+                                : '-'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t text-sm">
+                          <div>
+                            <span className="text-gray-500">Total Paid</span>
+                            <p className="font-semibold text-green-600">
+                              Rs.{enrollment.total_paid?.toLocaleString() || '0'}
+                            </p>
+                          </div>
+                          {enrollment.total_discount > 0 && (
+                            <div>
+                              <span className="text-gray-500">Discount</span>
+                              <p className="font-medium text-orange-600">
+                                Rs.{enrollment.total_discount.toLocaleString()}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        {enrollment.enrollment_notes && (
+                          <div className="mt-2 pt-2 border-t text-sm">
+                            <span className="text-gray-500">Notes:</span>{' '}
+                            <span className="text-gray-700">{enrollment.enrollment_notes}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             /* Activity Timeline Tab */
@@ -512,9 +668,20 @@ export default function LeadDetailModal({
             )}
           </div>
           <div className="flex gap-3">
+            {child?.id && (
+              <button
+                onClick={() => {
+                  onClose();
+                  router.push(`/students/${child.id}`);
+                }}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                View Full Profile
+              </button>
+            )}
             {onRefresh && (
               <button
-                onClick={() => { onRefresh(); fetchActivities(); }}
+                onClick={() => { onRefresh(); fetchActivities(); fetchEnrollments(); }}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100"
               >
                 Refresh
