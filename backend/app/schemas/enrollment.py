@@ -196,3 +196,38 @@ class EnrolledStudentResponse(BaseModel):
     # Payment summary
     total_paid: Decimal
     total_discount: Decimal
+
+
+# Master Students schemas
+class MasterStudentResponse(BaseModel):
+    """Child-centric view: one row per child with aggregated enrollment data"""
+    # Child info
+    child: ChildInfo
+    parents: List[ParentInfo] = []
+
+    # Enrollment summary
+    enrollment_count: int
+    is_renewal: bool  # enrollment_count > 1
+
+    # Latest enrollment details
+    latest_enrollment_id: int
+    latest_plan_type: str
+    latest_status: str
+    latest_start_date: Optional[date] = None
+    latest_end_date: Optional[date] = None
+    latest_visits_included: Optional[int] = None
+    latest_visits_used: int = 0
+    latest_batch: Optional[BatchInfo] = None
+    latest_enrolled_at: Optional[datetime] = None
+
+    # Aggregates
+    total_paid: float = 0
+    lead_source: Optional[str] = None
+    converted_at: Optional[date] = None
+
+
+class MasterStudentsStatsResponse(BaseModel):
+    total: int
+    new_count: int
+    renewal_count: int
+    by_status: dict  # { "ACTIVE": N, "EXPIRED": N, ... }

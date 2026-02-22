@@ -262,7 +262,8 @@ class LeadService:
         search_query: Optional[str] = None,
         assigned_to: Optional[int] = None,
         skip: int = 0,
-        limit: int = 100
+        limit: int = 100,
+        exclude_statuses: Optional[List[str]] = None
     ) -> tuple[List[Lead], int]:
         """Get leads with filters and return both results and total count."""
         query = db.query(Lead).options(joinedload(Lead.child)).filter(
@@ -274,6 +275,9 @@ class LeadService:
 
         if status:
             query = query.filter(Lead.status == status)
+
+        if exclude_statuses:
+            query = query.filter(Lead.status.notin_(exclude_statuses))
 
         if assigned_to:
             query = query.filter(Lead.assigned_to_user_id == assigned_to)
@@ -801,7 +805,7 @@ class LeadService:
         return query.order_by(FollowUp.scheduled_date).offset(skip).limit(limit).all()
 
     @staticmethod
-    def get_status_counts(db: Session, center_id: Optional[int]) -> dict:
+    def get_status_counts(db: Session, center_id: Optional[int], exclude_statuses: Optional[List[str]] = None) -> dict:
         """Get count of leads by status"""
         query = db.query(
             Lead.status,
@@ -813,14 +817,19 @@ class LeadService:
         if center_id is not None:
             query = query.filter(Lead.center_id == center_id)
 
+        if exclude_statuses:
+            query = query.filter(Lead.status.notin_(exclude_statuses))
+
         query = query.group_by(Lead.status)
         results = query.all()
 
         # Convert to dict with status as key
         counts = {status.value: count for status, count in results}
 
-        # Add zero counts for statuses with no leads
+        # Add zero counts for statuses with no leads (excluding excluded ones)
         for status in LeadStatus:
+            if exclude_statuses and status.value in exclude_statuses:
+                continue
             if status.value not in counts:
                 counts[status.value] = 0
 

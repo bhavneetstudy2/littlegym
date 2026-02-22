@@ -453,6 +453,261 @@ def update_child(
     }
 
 
+# ── Master Students Endpoints ──────────────────────────────────────
+
+@router.get("/master-students/stats")
+def get_master_student_stats(
+    center_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN, UserRole.COUNSELOR))
+):
+    """Get summary stats for master students view"""
+    if current_user.role == UserRole.SUPER_ADMIN:
+        if not center_id:
+            raise HTTPException(status_code=400, detail="center_id required for super admin")
+        effective_center_id = center_id
+    else:
+        effective_center_id = current_user.center_id
+
+    result = db.execute(text('''
+        SELECT
+            COUNT(DISTINCT c.id) as total,
+            COUNT(DISTINCT c.id) FILTER (WHERE sub.enrollment_count = 1) as new_count,
+            COUNT(DISTINCT c.id) FILTER (WHERE sub.enrollment_count > 1) as renewal_count
+        FROM children c
+        INNER JOIN (
+            SELECT child_id, COUNT(*) as enrollment_count
+            FROM enrollments
+            WHERE center_id = :cid AND is_archived = false
+            GROUP BY child_id
+        ) sub ON sub.child_id = c.id
+        WHERE c.center_id = :cid AND c.is_archived = false
+    '''), {'cid': effective_center_id}).fetchone()
+
+    # By latest enrollment status
+    status_rows = db.execute(text('''
+        SELECT latest.status, COUNT(*) as cnt
+        FROM (
+            SELECT DISTINCT ON (e.child_id) e.child_id, e.status
+            FROM enrollments e
+            WHERE e.center_id = :cid AND e.is_archived = false
+            ORDER BY e.child_id, e.start_date DESC NULLS LAST, e.created_at DESC
+        ) latest
+        GROUP BY latest.status
+    '''), {'cid': effective_center_id}).fetchall()
+
+    by_status = {row[0]: row[1] for row in status_rows}
+
+    return {
+        "total": result[0] or 0,
+        "new_count": result[1] or 0,
+        "renewal_count": result[2] or 0,
+        "by_status": by_status,
+    }
+
+
+@router.get("/master-students/list")
+def get_master_students(
+    center_id: Optional[int] = Query(None),
+    search: Optional[str] = Query(None),
+    batch_id: Optional[int] = Query(None),
+    enrollment_status: Optional[str] = Query(None),
+    enrollment_type: Optional[str] = Query(None, description="'new' or 'renewal'"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.CENTER_ADMIN, UserRole.COUNSELOR))
+):
+    """Get child-centric master students list with enrollment aggregates"""
+    if current_user.role == UserRole.SUPER_ADMIN:
+        if not center_id:
+            raise HTTPException(status_code=400, detail="center_id required for super admin")
+        effective_center_id = center_id
+    else:
+        effective_center_id = current_user.center_id
+
+    # Build WHERE clauses
+    where_clauses = ["c.center_id = :cid", "c.is_archived = false"]
+    params: dict = {'cid': effective_center_id}
+
+    if search:
+        where_clauses.append("""(
+            LOWER(c.first_name || ' ' || COALESCE(c.last_name, '')) LIKE :search
+            OR LOWER(c.enquiry_id) LIKE :search
+            OR EXISTS (
+                SELECT 1 FROM family_links fl
+                JOIN parents p ON fl.parent_id = p.id
+                WHERE fl.child_id = c.id
+                AND (LOWER(p.name) LIKE :search OR p.phone LIKE :search)
+            )
+        )""")
+        params['search'] = f"%{search.lower()}%"
+
+    if batch_id:
+        where_clauses.append("latest_e.batch_id = :batch_id")
+        params['batch_id'] = batch_id
+
+    if enrollment_status:
+        where_clauses.append("latest_e.status = :estatus")
+        params['estatus'] = enrollment_status
+
+    where_sql = " AND ".join(where_clauses)
+
+    # Having clause for new/renewal filter
+    having_clause = ""
+    if enrollment_type == 'new':
+        having_clause = "HAVING COUNT(e.id) = 1"
+    elif enrollment_type == 'renewal':
+        having_clause = "HAVING COUNT(e.id) > 1"
+
+    # Count query
+    count_sql = f'''
+        SELECT COUNT(*) FROM (
+            SELECT c.id
+            FROM children c
+            INNER JOIN enrollments e ON e.child_id = c.id AND e.is_archived = false AND e.center_id = :cid
+            INNER JOIN LATERAL (
+                SELECT e2.id, e2.status, e2.batch_id, e2.plan_type,
+                       e2.start_date, e2.end_date, e2.visits_included, e2.visits_used, e2.created_at
+                FROM enrollments e2
+                WHERE e2.child_id = c.id AND e2.is_archived = false AND e2.center_id = :cid
+                ORDER BY e2.start_date DESC NULLS LAST, e2.created_at DESC
+                LIMIT 1
+            ) latest_e ON true
+            WHERE {where_sql}
+            GROUP BY c.id, latest_e.id, latest_e.status, latest_e.batch_id, latest_e.plan_type,
+                     latest_e.start_date, latest_e.end_date, latest_e.visits_included,
+                     latest_e.visits_used, latest_e.created_at
+            {having_clause}
+        ) sub
+    '''
+    total = db.execute(text(count_sql), params).scalar() or 0
+
+    offset = (page - 1) * page_size
+
+    # Main query
+    main_sql = f'''
+        SELECT
+            c.id as child_id, c.enquiry_id, c.first_name, c.last_name, c.dob,
+            c.age_years, c.school, c.notes as child_notes,
+            COUNT(e.id) as enrollment_count,
+            latest_e.id as latest_enrollment_id,
+            latest_e.plan_type, latest_e.status as latest_status,
+            latest_e.start_date, latest_e.end_date,
+            latest_e.visits_included, latest_e.visits_used,
+            latest_e.batch_id, latest_e.created_at as latest_enrolled_at,
+            b.id as batch_id_out, b.name as batch_name,
+            b.age_min as batch_age_min, b.age_max as batch_age_max,
+            b.days_of_week as batch_days, b.start_time as batch_start, b.end_time as batch_end,
+            COALESCE(pay.total_paid, 0) as total_paid,
+            l.source as lead_source, l.converted_at
+        FROM children c
+        INNER JOIN enrollments e ON e.child_id = c.id AND e.is_archived = false AND e.center_id = :cid
+        INNER JOIN LATERAL (
+            SELECT e2.id, e2.status, e2.batch_id, e2.plan_type,
+                   e2.start_date, e2.end_date, e2.visits_included, e2.visits_used, e2.created_at
+            FROM enrollments e2
+            WHERE e2.child_id = c.id AND e2.is_archived = false AND e2.center_id = :cid
+            ORDER BY e2.start_date DESC NULLS LAST, e2.created_at DESC
+            LIMIT 1
+        ) latest_e ON true
+        LEFT JOIN batches b ON latest_e.batch_id = b.id
+        LEFT JOIN LATERAL (
+            SELECT SUM(p.amount) as total_paid
+            FROM payments p
+            JOIN enrollments e3 ON p.enrollment_id = e3.id
+            WHERE e3.child_id = c.id AND e3.center_id = :cid AND p.is_archived = false
+        ) pay ON true
+        LEFT JOIN leads l ON l.child_id = c.id AND l.center_id = :cid AND l.status = 'CONVERTED'
+        WHERE {where_sql}
+        GROUP BY c.id, c.enquiry_id, c.first_name, c.last_name, c.dob,
+                 c.age_years, c.school, c.notes,
+                 latest_e.id, latest_e.plan_type, latest_e.status,
+                 latest_e.start_date, latest_e.end_date,
+                 latest_e.visits_included, latest_e.visits_used,
+                 latest_e.batch_id, latest_e.created_at,
+                 b.id, b.name, b.age_min, b.age_max, b.days_of_week::text, b.start_time, b.end_time,
+                 pay.total_paid, l.source, l.converted_at
+        {having_clause}
+        ORDER BY c.first_name, c.last_name
+        LIMIT :limit OFFSET :offset
+    '''
+    params['limit'] = page_size
+    params['offset'] = offset
+
+    rows = db.execute(text(main_sql), params).fetchall()
+
+    # Batch-fetch parents
+    child_ids = [row[0] for row in rows]
+    parent_map: dict = {}
+    if child_ids:
+        parent_rows = db.execute(text('''
+            SELECT fl.child_id, p.id, p.name, p.phone, p.email,
+                   fl.relationship_type, fl.is_primary_contact
+            FROM family_links fl
+            JOIN parents p ON fl.parent_id = p.id
+            WHERE fl.child_id = ANY(:child_ids)
+            ORDER BY fl.is_primary_contact DESC
+        '''), {'child_ids': child_ids}).fetchall()
+        for pr in parent_rows:
+            parent_map.setdefault(pr[0], []).append({
+                "id": pr[1],
+                "name": pr[2],
+                "phone": pr[3],
+                "email": pr[4],
+                "relationship_type": pr[5],
+                "is_primary_contact": pr[6],
+            })
+
+    # Build response
+    students = []
+    for row in rows:
+        child_id = row[0]
+        enrollment_count = row[8]
+        batch_info = None
+        if row[18]:  # batch_id_out
+            batch_info = {
+                "id": row[18], "name": row[19],
+                "age_min": row[20], "age_max": row[21],
+                "days_of_week": json.loads(row[22]) if isinstance(row[22], str) else row[22],
+                "start_time": str(row[23]) if row[23] else None,
+                "end_time": str(row[24]) if row[24] else None,
+            }
+
+        students.append({
+            "child": {
+                "id": child_id, "enquiry_id": row[1],
+                "first_name": row[2], "last_name": row[3],
+                "dob": str(row[4]) if row[4] else None,
+                "age_years": row[5], "school": row[6], "notes": row[7],
+            },
+            "parents": parent_map.get(child_id, []),
+            "enrollment_count": enrollment_count,
+            "is_renewal": enrollment_count > 1,
+            "latest_enrollment_id": row[9],
+            "latest_plan_type": row[10],
+            "latest_status": row[11],
+            "latest_start_date": str(row[12]) if row[12] else None,
+            "latest_end_date": str(row[13]) if row[13] else None,
+            "latest_visits_included": row[14],
+            "latest_visits_used": row[15] or 0,
+            "latest_batch": batch_info,
+            "latest_enrolled_at": str(row[17]) if row[17] else None,
+            "total_paid": float(row[25]) if row[25] else 0,
+            "lead_source": row[26],
+            "converted_at": str(row[27]) if row[27] else None,
+        })
+
+    import math
+    return {
+        "students": students,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": math.ceil(total / page_size) if total > 0 else 0,
+    }
+
+
 @router.get("/{enrollment_id}", response_model=EnrollmentDetailResponse)
 def get_enrollment(
     enrollment_id: int,

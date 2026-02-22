@@ -92,6 +92,7 @@ export default function EnhancedLeadsPage() {
     try {
       const params = new URLSearchParams({
         center_id: selectedCenter.id.toString(),
+        exclude_statuses: 'CONVERTED',
       });
 
       const counts = await api.get<Record<string, number>>(`/api/v1/leads/stats/status-counts?${params.toString()}`);
@@ -114,6 +115,7 @@ export default function EnhancedLeadsPage() {
         center_id: selectedCenter.id.toString(),
         page: currentPage.toString(),
         page_size: pageSize.toString(),
+        exclude_statuses: 'CONVERTED',
       });
 
       if (selectedStatus !== 'ALL') {

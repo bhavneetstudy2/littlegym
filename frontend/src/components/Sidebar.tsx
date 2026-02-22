@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useStudentLookup } from '@/contexts/StudentLookupContext';
 import {
-  Building2, Database, LayoutDashboard, Users, ClipboardCheck,
+  Building2, Database, LayoutDashboard, Users, GraduationCap, ClipboardCheck,
   CalendarCheck, TrendingUp, FileText, RefreshCw, Settings,
   Upload, Search, LogOut,
 } from 'lucide-react';
@@ -54,6 +54,7 @@ export default function Sidebar() {
     { name: 'Master Data', href: '/mdm', icon: Database, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'] },
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'COUNSELOR'] },
     { name: 'Leads', href: '/leads', icon: Users, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'COUNSELOR'] },
+    { name: 'Students', href: '/students', icon: GraduationCap, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'COUNSELOR'] },
     { name: 'Enrollments', href: '/enrollments', icon: ClipboardCheck, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'COUNSELOR'] },
     { name: 'Attendance', href: '/attendance', icon: CalendarCheck, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'CENTER_MANAGER', 'TRAINER'] },
     { name: 'Progress', href: '/progress', icon: TrendingUp, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'CENTER_MANAGER', 'TRAINER'] },

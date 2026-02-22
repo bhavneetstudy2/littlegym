@@ -51,6 +51,7 @@ def get_leads_paginated(
     search: Optional[str] = Query(None),
     assigned_to: Optional[int] = Query(None),
     center_id: Optional[int] = Query(None),
+    exclude_statuses: Optional[str] = Query(None, description="Comma-separated statuses to exclude"),
     page: int = Query(1, ge=1, description="Page number (1-indexed)"),
     page_size: int = Query(50, ge=1, le=100, description="Items per page"),
     db: Session = Depends(get_db),
@@ -67,6 +68,11 @@ def get_leads_paginated(
     else:
         effective_center_id = current_user.center_id
 
+    # Parse exclude_statuses
+    exclude_list = None
+    if exclude_statuses:
+        exclude_list = [s.strip() for s in exclude_statuses.split(',') if s.strip()]
+
     # Calculate skip based on page
     skip = (page - 1) * page_size
 
@@ -78,7 +84,8 @@ def get_leads_paginated(
         search_query=search,
         assigned_to=assigned_to,
         skip=skip,
-        limit=page_size
+        limit=page_size,
+        exclude_statuses=exclude_list
     )
 
     # Calculate total pages
@@ -114,6 +121,7 @@ def get_leads_paginated(
 @router.get("/stats/status-counts")
 def get_status_counts(
     center_id: Optional[int] = Query(None),
+    exclude_statuses: Optional[str] = Query(None, description="Comma-separated statuses to exclude"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -127,7 +135,11 @@ def get_status_counts(
     else:
         effective_center_id = current_user.center_id
 
-    counts = LeadService.get_status_counts(db=db, center_id=effective_center_id)
+    exclude_list = None
+    if exclude_statuses:
+        exclude_list = [s.strip() for s in exclude_statuses.split(',') if s.strip()]
+
+    counts = LeadService.get_status_counts(db=db, center_id=effective_center_id, exclude_statuses=exclude_list)
     return counts
 
 
