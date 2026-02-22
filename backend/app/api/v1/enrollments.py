@@ -967,3 +967,56 @@ def get_enrollment_payments(
 
     payments = db.query(Payment).filter(Payment.enrollment_id == enrollment_id).all()
     return payments
+
+
+@router.post("/fix-stale-leads")
+def fix_stale_leads(
+    center_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.SUPER_ADMIN, UserRole.CENTER_ADMIN))
+):
+    """One-time fix: Convert leads whose children already have enrollments but lead status was never updated."""
+    from app.models.lead import Lead
+    from app.utils.enums import LeadStatus
+
+    if current_user.role == UserRole.SUPER_ADMIN:
+        if not center_id:
+            raise HTTPException(status_code=400, detail="center_id required for super admin")
+        effective_center_id = center_id
+    else:
+        effective_center_id = current_user.center_id
+
+    # Find leads that are NOT converted but whose child has at least one enrollment
+    stale_leads = db.execute(text('''
+        SELECT l.id, l.child_id, l.status,
+               (SELECT e.id FROM enrollments e
+                WHERE e.child_id = l.child_id AND e.center_id = :cid AND e.is_archived = false
+                ORDER BY e.created_at DESC LIMIT 1) as enrollment_id
+        FROM leads l
+        WHERE l.center_id = :cid
+          AND l.is_archived = false
+          AND l.status != :converted
+          AND EXISTS (
+              SELECT 1 FROM enrollments e
+              WHERE e.child_id = l.child_id AND e.center_id = :cid AND e.is_archived = false
+          )
+    '''), {'cid': effective_center_id, 'converted': LeadStatus.CONVERTED.value}).fetchall()
+
+    fixed = []
+    for row in stale_leads:
+        lead = db.query(Lead).filter(Lead.id == row[0]).first()
+        if lead:
+            old_status = lead.status.value if lead.status else None
+            lead.status = LeadStatus.CONVERTED
+            lead.enrollment_id = row[3]
+            lead.converted_at = date_type.today()
+            lead.updated_by_id = current_user.id
+            fixed.append({
+                "lead_id": row[0],
+                "child_id": row[1],
+                "old_status": old_status,
+                "enrollment_id": row[3]
+            })
+
+    db.commit()
+    return {"fixed_count": len(fixed), "fixed_leads": fixed}

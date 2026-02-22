@@ -106,31 +106,42 @@ class EnrollmentService:
                 )
                 db.add(discount)
 
-            # Update lead status to CONVERTED if lead_id provided
+            # Update lead status to CONVERTED
+            # If lead_id provided, use it; otherwise auto-find unconverted lead for this child
+            lead = None
             if lead_id:
                 lead = db.query(Lead).filter(Lead.id == lead_id).first()
-                if lead:
-                    old_status = lead.status.value if lead.status else None
-                    lead.status = LeadStatus.CONVERTED
-                    lead.enrollment_id = enrollment.id
-                    lead.converted_at = date.today()
-                    lead.updated_by_id = created_by_id
-                    lead.updated_at = datetime.utcnow()
+            else:
+                # Auto-find any unconverted lead for this child in the same center
+                lead = db.query(Lead).filter(
+                    Lead.child_id == enrollment.child_id,
+                    Lead.center_id == center_id,
+                    Lead.status != LeadStatus.CONVERTED,
+                    Lead.is_archived == False,
+                ).order_by(Lead.created_at.desc()).first()
 
-                    # Log activity
-                    activity = LeadActivity(
-                        lead_id=lead_id,
-                        center_id=lead.center_id,
-                        activity_type="LEAD_CONVERTED",
-                        description=f"Lead converted to enrollment (Enrollment #{enrollment.id})",
-                        old_value=old_status,
-                        new_value=LeadStatus.CONVERTED.value,
-                        performed_by_id=created_by_id,
-                        performed_at=datetime.utcnow(),
-                        created_by_id=created_by_id,
-                        updated_by_id=created_by_id,
-                    )
-                    db.add(activity)
+            if lead:
+                old_status = lead.status.value if lead.status else None
+                lead.status = LeadStatus.CONVERTED
+                lead.enrollment_id = enrollment.id
+                lead.converted_at = date.today()
+                lead.updated_by_id = created_by_id
+                lead.updated_at = datetime.utcnow()
+
+                # Log activity
+                activity = LeadActivity(
+                    lead_id=lead.id,
+                    center_id=lead.center_id,
+                    activity_type="LEAD_CONVERTED",
+                    description=f"Lead converted to enrollment (Enrollment #{enrollment.id})",
+                    old_value=old_status,
+                    new_value=LeadStatus.CONVERTED.value,
+                    performed_by_id=created_by_id,
+                    performed_at=datetime.utcnow(),
+                    created_by_id=created_by_id,
+                    updated_by_id=created_by_id,
+                )
+                db.add(activity)
 
             db.commit()
             db.refresh(enrollment)
