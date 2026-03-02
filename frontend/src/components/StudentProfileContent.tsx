@@ -165,6 +165,9 @@ export default function StudentProfileContent({ childId, centerId, userRole, onC
   const [editingEnrollmentId, setEditingEnrollmentId] = useState<number | null>(null);
   const [enrollmentEditData, setEnrollmentEditData] = useState({ visits_included: '', start_date: '', end_date: '', notes: '' });
   const [savingEnrollment, setSavingEnrollment] = useState(false);
+  // Expire enrollment state
+  const [expiringEnrollmentId, setExpiringEnrollmentId] = useState<number | null>(null);
+  const [expireReason, setExpireReason] = useState('');
   // Inline renewal state
   const [renewingEnrollmentId, setRenewingEnrollmentId] = useState<number | null>(null);
   const [renewBatches, setRenewBatches] = useState<{ id: number; name: string; age_min?: number; age_max?: number; days_of_week?: string[]; start_time?: string; end_time?: string }[]>([]);
@@ -263,6 +266,7 @@ export default function StudentProfileContent({ childId, centerId, userRole, onC
     try {
       const payload = {
         ...editData,
+        dob: editData.dob || null,
         age_years: editData.age_years ? parseInt(editData.age_years) : null,
       };
       await api.patch(`/api/v1/enrollments/children/${childInfo.id}?center_id=${centerId}`, payload);
@@ -310,6 +314,31 @@ export default function StudentProfileContent({ childId, centerId, userRole, onC
       ));
     } catch (err: any) {
       alert(err.message || 'Failed to update status');
+    } finally {
+      setStatusSaving(false);
+      setStatusChangeId(null);
+    }
+  };
+
+  const confirmExpire = async () => {
+    if (!expiringEnrollmentId) return;
+    setStatusSaving(true);
+    setStatusChangeId(expiringEnrollmentId);
+    try {
+      const payload: Record<string, unknown> = { status: 'EXPIRED' };
+      if (expireReason.trim()) {
+        payload.notes = expireReason.trim();
+      }
+      await api.patch(`/api/v1/enrollments/${expiringEnrollmentId}`, payload);
+      setAllEnrollments(prev => prev.map(e =>
+        e.enrollment_id === expiringEnrollmentId
+          ? { ...e, status: 'EXPIRED', enrollment_notes: expireReason.trim() || e.enrollment_notes }
+          : e
+      ));
+      setExpiringEnrollmentId(null);
+      setExpireReason('');
+    } catch (err: any) {
+      alert(err.message || 'Failed to expire enrollment');
     } finally {
       setStatusSaving(false);
       setStatusChangeId(null);
@@ -808,6 +837,13 @@ export default function StudentProfileContent({ childId, centerId, userRole, onC
                                 Pause
                               </button>
                               <button
+                                onClick={() => { setExpiringEnrollmentId(enrollment.enrollment_id); setExpireReason(''); }}
+                                disabled={statusSaving && statusChangeId === enrollment.enrollment_id}
+                                className="text-xs px-2 py-1 border border-orange-300 text-orange-700 rounded hover:bg-orange-50 disabled:opacity-50"
+                              >
+                                Expire
+                              </button>
+                              <button
                                 onClick={() => changeEnrollmentStatus(enrollment.enrollment_id, 'CANCELLED')}
                                 disabled={statusSaving && statusChangeId === enrollment.enrollment_id}
                                 className="text-xs px-2 py-1 border border-red-300 text-red-700 rounded hover:bg-red-50 disabled:opacity-50"
@@ -822,21 +858,32 @@ export default function StudentProfileContent({ childId, centerId, userRole, onC
                               : enrollment.end_date
                                 ? new Date(enrollment.end_date) > new Date()
                                 : false;
-                            return hasRemaining ? (
-                              <button
-                                onClick={() => changeEnrollmentStatus(enrollment.enrollment_id, 'ACTIVE')}
-                                disabled={statusSaving && statusChangeId === enrollment.enrollment_id}
-                                className="text-xs px-2 py-1 border border-green-300 text-green-700 rounded hover:bg-green-50 disabled:opacity-50"
-                              >
-                                Reactivate
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => startRenewing(enrollment)}
-                                className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                              >
-                                Renew
-                              </button>
+                            return (
+                              <>
+                                {hasRemaining ? (
+                                  <button
+                                    onClick={() => changeEnrollmentStatus(enrollment.enrollment_id, 'ACTIVE')}
+                                    disabled={statusSaving && statusChangeId === enrollment.enrollment_id}
+                                    className="text-xs px-2 py-1 border border-green-300 text-green-700 rounded hover:bg-green-50 disabled:opacity-50"
+                                  >
+                                    Reactivate
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => startRenewing(enrollment)}
+                                    className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                  >
+                                    Renew
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => { setExpiringEnrollmentId(enrollment.enrollment_id); setExpireReason(''); }}
+                                  disabled={statusSaving && statusChangeId === enrollment.enrollment_id}
+                                  className="text-xs px-2 py-1 border border-orange-300 text-orange-700 rounded hover:bg-orange-50 disabled:opacity-50"
+                                >
+                                  Expire
+                                </button>
+                              </>
                             );
                           })()}
                           {(enrollment.status === 'EXPIRED' || enrollment.status === 'CANCELLED') && (
@@ -856,6 +903,34 @@ export default function StudentProfileContent({ childId, centerId, userRole, onC
                           <span className="text-sm text-gray-500">#{enrollment.enrollment_id}</span>
                         </div>
                       </div>
+
+                      {expiringEnrollmentId === enrollment.enrollment_id && (
+                        <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                          <p className="text-sm font-medium text-orange-800 mb-2">Expire this enrollment?</p>
+                          <textarea
+                            value={expireReason}
+                            onChange={e => setExpireReason(e.target.value)}
+                            placeholder="Reason for expiry (optional)"
+                            rows={2}
+                            className="w-full px-2 py-1.5 border border-orange-300 rounded text-sm mb-2 focus:outline-none focus:ring-1 focus:ring-orange-400"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={confirmExpire}
+                              disabled={statusSaving}
+                              className="text-xs px-3 py-1.5 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
+                            >
+                              {statusSaving ? 'Expiring...' : 'Confirm Expire'}
+                            </button>
+                            <button
+                              onClick={() => { setExpiringEnrollmentId(null); setExpireReason(''); }}
+                              className="text-xs px-3 py-1.5 border border-gray-300 text-gray-600 rounded hover:bg-gray-50"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {editingEnrollmentId === enrollment.enrollment_id ? (
                         <div className="space-y-3">

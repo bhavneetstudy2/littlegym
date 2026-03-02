@@ -213,7 +213,7 @@ export default function AttendancePage() {
       const q = searchQuery.toLowerCase();
       list = list.filter((s) => s.child_name.toLowerCase().includes(q) || (s.parent_name && s.parent_name.toLowerCase().includes(q)) || String(s.enrollment_id).includes(q));
     }
-    return list;
+    return [...list].sort((a, b) => a.child_name.localeCompare(b.child_name, undefined, { sensitivity: 'base' }));
   }, [unmarkedStudents, activeLetter, searchQuery]);
 
   const activeLetters = useMemo(() => {

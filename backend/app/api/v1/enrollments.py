@@ -508,6 +508,16 @@ def get_expiring_enrollments(
           AND e.status IN ('ACTIVE', 'EXPIRED')
           AND e.is_archived = false
           AND {expiry_filter}
+          AND NOT (
+              e.status = 'EXPIRED'
+              AND EXISTS (
+                  SELECT 1 FROM enrollments e2
+                  WHERE e2.child_id = e.child_id
+                    AND e2.center_id = e.center_id
+                    AND e2.status = 'ACTIVE'
+                    AND e2.is_archived = false
+              )
+          )
           {search_filter}
         ORDER BY
             COALESCE(e.end_date - CURRENT_DATE, e.visits_included - e.visits_used) ASC NULLS LAST

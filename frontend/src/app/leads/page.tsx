@@ -92,7 +92,6 @@ export default function EnhancedLeadsPage() {
     try {
       const params = new URLSearchParams({
         center_id: selectedCenter.id.toString(),
-        exclude_statuses: 'CONVERTED',
       });
 
       const counts = await api.get<Record<string, number>>(`/api/v1/leads/stats/status-counts?${params.toString()}`);
@@ -316,20 +315,18 @@ export default function EnhancedLeadsPage() {
       );
     }
 
-    // Enrolled - available after IV completed or follow-up
-    if (['IV_COMPLETED', 'FOLLOW_UP_PENDING'].includes(lead.status)) {
-      actions.push(
-        <button
-          key="enrolled"
-          onClick={(e) => { e.stopPropagation(); handleEnroll(lead); }}
-          disabled={isLoading}
-          className="px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-800 hover:bg-green-200 transition whitespace-nowrap"
-          title="Mark as Enrolled"
-        >
-          Enrolled
-        </button>
-      );
-    }
+    // Enroll - available for all non-terminal statuses (direct enrollment)
+    actions.push(
+      <button
+        key="enroll"
+        onClick={(e) => { e.stopPropagation(); handleEnroll(lead); }}
+        disabled={isLoading}
+        className="px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-800 hover:bg-green-200 transition whitespace-nowrap"
+        title="Enroll Student"
+      >
+        Enroll
+      </button>
+    );
 
     // Not Interested - available for all non-terminal
     actions.push(
