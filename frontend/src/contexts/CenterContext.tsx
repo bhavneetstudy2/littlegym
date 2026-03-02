@@ -31,13 +31,21 @@ interface CenterContextProviderProps {
 export function CenterContextProvider({ children }: CenterContextProviderProps) {
   const [selectedCenter, setSelectedCenterState] = useState<Center | null>(null);
   const [centers, setCenters] = useState<Center[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !!localStorage.getItem('access_token');
+    }
+    return false;
+  });
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   // Determine role and fetch centers
   useEffect(() => {
     const token = localStorage.getItem('access_token');
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
     const initContext = async () => {
       // Read user from localStorage first (stored during login) to avoid extra API call
@@ -56,6 +64,7 @@ export function CenterContextProvider({ children }: CenterContextProviderProps) 
           user = await api.get<any>('/api/v1/auth/me');
         } catch (error) {
           console.error('Failed to fetch user info:', error);
+          setLoading(false);
           return;
         }
       }
@@ -65,7 +74,6 @@ export function CenterContextProvider({ children }: CenterContextProviderProps) 
 
       if (isSuper) {
         // Super admin: fetch all centers and restore saved selection
-        setLoading(true);
         try {
           const data = await api.get<Center[]>('/api/v1/centers');
           setCenters(data);
@@ -80,8 +88,10 @@ export function CenterContextProvider({ children }: CenterContextProviderProps) 
           setLoading(false);
         }
       } else if (user.center_id) {
-        // Center admin: auto-select their center
+        // Center admin/manager: auto-select their center
         await fetchUserCenter(user.center_id);
+      } else {
+        setLoading(false);
       }
     };
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCenter } from '@/contexts/CenterContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import StudentProfileModal from '@/components/StudentProfileModal';
 
@@ -95,6 +96,8 @@ const formatDate = (dateString?: string) => {
 export default function EnrollmentsPage() {
   const router = useRouter();
   const { selectedCenter } = useCenter();
+  const { user } = useAuth();
+  const isCenterManager = user?.role === 'CENTER_MANAGER';
   const [enrollments, setEnrollments] = useState<EnrolledStudent[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
   const [batchCounts, setBatchCounts] = useState<Record<number, number>>({});
@@ -244,8 +247,25 @@ export default function EnrollmentsPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Batch Overview Cards */}
-        {batches.length > 0 && (
+        {/* CENTER_MANAGER: only show New Enrollment prompt */}
+        {isCenterManager && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+            <div className="text-gray-400 mb-3">
+              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
+            </div>
+            <p className="text-gray-600 font-medium mb-1">Create a New Enrollment</p>
+            <p className="text-gray-400 text-sm mb-4">Click the &quot;+ New Enrollment&quot; button above to enroll a student</p>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium"
+            >
+              + New Enrollment
+            </button>
+          </div>
+        )}
+
+        {/* Full enrollment list (hidden for CENTER_MANAGER) */}
+        {!isCenterManager && batches.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             {batches.map((batch) => {
               const batchCount = batchCounts[batch.id] || 0;
@@ -268,7 +288,8 @@ export default function EnrollmentsPage() {
           </div>
         )}
 
-        {/* Filters */}
+        {/* Filters + Table (hidden for CENTER_MANAGER) */}
+        {!isCenterManager && (<>
         <div className="bg-white rounded-lg shadow p-4 mb-4">
           <div className="flex flex-wrap gap-4 items-end">
             <div className="flex-1 min-w-[200px]">
@@ -415,6 +436,7 @@ export default function EnrollmentsPage() {
             </div>
           )}
         </div>
+        </>)}
       </div>
 
       {/* Create Enrollment Modal */}
@@ -422,6 +444,7 @@ export default function EnrollmentsPage() {
         <CreateEnrollmentModal
           centerId={selectedCenter.id}
           batches={batches}
+          userRole={user?.role}
           onClose={() => setShowCreateModal(false)}
           onSuccess={() => {
             setShowCreateModal(false);
@@ -436,6 +459,7 @@ export default function EnrollmentsPage() {
           childId={selectedStudentId}
           enrollmentId={selectedEnrollmentId || undefined}
           centerId={selectedCenter.id}
+          userRole={user?.role}
           onClose={() => { setSelectedStudentId(null); setSelectedEnrollmentId(null); }}
         />
       )}
@@ -446,14 +470,17 @@ export default function EnrollmentsPage() {
 function CreateEnrollmentModal({
   centerId,
   batches,
+  userRole,
   onClose,
   onSuccess
 }: {
   centerId: number;
   batches: Batch[];
+  userRole?: string;
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const isCenterManager = userRole === 'CENTER_MANAGER';
   const [step, setStep] = useState<'child' | 'enrollment'>('child');
   const [childData, setChildData] = useState({
     first_name: '',
@@ -493,6 +520,39 @@ function CreateEnrollmentModal({
   const PLAN_TYPES = ['PAY_PER_VISIT', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'CUSTOM'];
   const PAYMENT_METHODS = ['CASH', 'UPI', 'CARD', 'BANK_TRANSFER', 'OTHER'];
 
+  const activeBatchesList = batches.filter(b => b.active !== false);
+
+  // Auto-fill days when batch is selected
+  useEffect(() => {
+    if (enrollmentData.batch_id) {
+      const batch = activeBatchesList.find(b => b.id === Number(enrollmentData.batch_id));
+      if (batch?.days_of_week) {
+        setEnrollmentData(prev => ({ ...prev, days_selected: batch.days_of_week || [] }));
+      }
+    }
+  }, [enrollmentData.batch_id]);
+
+  // Auto-calculate end date and booked classes based on plan type + days per week
+  useEffect(() => {
+    if (enrollmentData.start_date && enrollmentData.plan_type !== 'PAY_PER_VISIT' && enrollmentData.plan_type !== 'CUSTOM') {
+      const start = new Date(enrollmentData.start_date);
+      const end = new Date(start);
+      const daysPerWeek = Math.max(enrollmentData.days_selected.length, 1);
+      let weeks = 1;
+      switch (enrollmentData.plan_type) {
+        case 'WEEKLY': weeks = 1; end.setDate(end.getDate() + 7); break;
+        case 'MONTHLY': weeks = 4; end.setMonth(end.getMonth() + 1); break;
+        case 'QUARTERLY': weeks = 12; end.setMonth(end.getMonth() + 3); break;
+        case 'YEARLY': weeks = 48; end.setFullYear(end.getFullYear() + 1); break;
+      }
+      setEnrollmentData(prev => ({
+        ...prev,
+        end_date: end.toISOString().split('T')[0],
+        visits_included: String(daysPerWeek * weeks)
+      }));
+    }
+  }, [enrollmentData.start_date, enrollmentData.plan_type, enrollmentData.days_selected.length]);
+
   const toggleDay = (day: string) => {
     setEnrollmentData(prev => ({
       ...prev,
@@ -513,7 +573,7 @@ function CreateEnrollmentModal({
       return;
     }
 
-    if (!enrollmentData.payment_amount || parseFloat(enrollmentData.payment_amount) <= 0) {
+    if (!isCenterManager && (!enrollmentData.payment_amount || parseFloat(enrollmentData.payment_amount) <= 0)) {
       setError('Please enter a valid payment amount');
       setSubmitting(false);
       return;
@@ -555,8 +615,8 @@ function CreateEnrollmentModal({
         days_selected: enrollmentData.days_selected.length > 0 ? enrollmentData.days_selected : null,
         notes: enrollmentData.notes || null,
         payment: {
-          amount: parseFloat(enrollmentData.payment_amount),
-          method: enrollmentData.payment_method,
+          amount: isCenterManager ? 0 : parseFloat(enrollmentData.payment_amount),
+          method: isCenterManager ? 'CASH' : enrollmentData.payment_method,
           reference: enrollmentData.payment_reference || null,
           paid_at: new Date().toISOString()
         }
@@ -843,18 +903,18 @@ function CreateEnrollmentModal({
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                       />
                     </div>
-                    {enrollmentData.plan_type === 'PAY_PER_VISIT' && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Visits Included</label>
-                        <input
-                          type="number"
-                          value={enrollmentData.visits_included}
-                          onChange={(e) => setEnrollmentData({ ...enrollmentData, visits_included: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                          placeholder="e.g., 12"
-                        />
-                      </div>
-                    )}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Booked Classes *</label>
+                      <input
+                        type="number"
+                        value={enrollmentData.visits_included}
+                        onChange={(e) => setEnrollmentData({ ...enrollmentData, visits_included: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        placeholder="e.g., 24"
+                        min="1"
+                        required
+                      />
+                    </div>
                   </div>
 
                   <div className="mt-4">
@@ -878,7 +938,8 @@ function CreateEnrollmentModal({
                   </div>
                 </div>
 
-                {/* Payment Details */}
+                {/* Payment Details (hidden for CENTER_MANAGER) */}
+                {!isCenterManager && (
                 <div className="bg-yellow-50 p-4 rounded-lg">
                   <h3 className="font-semibold mb-3 text-yellow-800">Payment Details *</h3>
                   <div className="grid grid-cols-2 gap-4">
@@ -917,6 +978,7 @@ function CreateEnrollmentModal({
                     </div>
                   </div>
                 </div>
+                )}
 
                 {/* Notes */}
                 <div>

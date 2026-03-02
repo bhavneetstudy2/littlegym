@@ -37,8 +37,8 @@ export default function LoginPage() {
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      // Redirect restricted roles to attendance, others to dashboard
-      const redirectPath = (data.user.role === 'TRAINER' || data.user.role === 'CENTER_MANAGER') ? '/attendance' : '/dashboard';
+      // Redirect by role: trainers→attendance, center managers→leads, others→dashboard
+      const redirectPath = data.user.role === 'TRAINER' ? '/attendance' : data.user.role === 'CENTER_MANAGER' ? '/leads' : '/dashboard';
       window.location.href = redirectPath;
 
     } catch (err: any) {

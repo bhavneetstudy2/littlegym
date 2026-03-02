@@ -7,7 +7,7 @@ from sqlalchemy import func
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_role
 from app.models.user import User
-from app.models import Batch, Child, Enrollment, Attendance, ClassSession
+from app.models import Batch, Child, FamilyLink, Enrollment, Attendance, ClassSession
 from app.schemas.attendance import (
     ClassSessionCreate,
     ClassSessionUpdate,
@@ -231,10 +231,13 @@ def get_batch_students_with_summary(
     else:
         effective_center_id = current_user.center_id
 
-    # Single query: enrollments + children + batch via eager loading
+    # Single query: enrollments + children + batch + family_links/parents via eager loading
     enrollments = (
         db.query(Enrollment)
-        .options(joinedload(Enrollment.child), joinedload(Enrollment.batch))
+        .options(
+            joinedload(Enrollment.child).joinedload(Child.family_links).joinedload(FamilyLink.parent),
+            joinedload(Enrollment.batch),
+        )
         .filter(
             Enrollment.batch_id == batch_id,
             Enrollment.center_id == effective_center_id,
@@ -281,9 +284,18 @@ def get_batch_students_with_summary(
         if not include_exhausted and enrollment.visits_included is not None and classes_remaining <= 0:
             continue
 
+        # Get primary parent name (prefer is_primary_contact, fallback to first)
+        parent_name = None
+        if child.family_links:
+            primary = next((fl for fl in child.family_links if fl.is_primary_contact), None)
+            link = primary or child.family_links[0]
+            if link.parent:
+                parent_name = link.parent.name
+
         results.append(BatchStudentSummary(
             child_id=child.id,
             child_name=f"{child.first_name} {child.last_name or ''}".strip(),
+            parent_name=parent_name,
             enrollment_id=enrollment.id,
             batch_id=batch_id,
             batch_name=batch_name,

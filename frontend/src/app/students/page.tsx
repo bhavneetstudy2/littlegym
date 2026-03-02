@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useCenter } from '@/contexts/CenterContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import StudentProfileModal from '@/components/StudentProfileModal';
 
@@ -119,7 +120,9 @@ const getStatusColor = (status: string) => {
 };
 
 export default function MasterStudentsPage() {
-  const { selectedCenter } = useCenter();
+  const { selectedCenter, loading: centerLoading } = useCenter();
+  const { user } = useAuth();
+  const isCenterManager = user?.role === 'CENTER_MANAGER';
   const [students, setStudents] = useState<MasterStudent[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<StatsResponse | null>(null);
@@ -151,20 +154,27 @@ export default function MasterStudentsPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Fetch stats
+  // Fetch stats (not for CENTER_MANAGER)
   useEffect(() => {
-    if (selectedCenter) {
+    if (selectedCenter && !isCenterManager) {
       fetchStats();
       fetchBatches();
     }
-  }, [selectedCenter]);
+  }, [selectedCenter, isCenterManager]);
 
   // Fetch students when filters change
+  // CENTER_MANAGER only fetches when search query has 2+ chars
   useEffect(() => {
     if (selectedCenter) {
+      if (isCenterManager && debouncedSearch.length < 2) {
+        setStudents([]);
+        setTotal(0);
+        setLoading(false);
+        return;
+      }
       fetchStudents();
     }
-  }, [selectedCenter, page, debouncedSearch, selectedStatus, selectedBatch, selectedType]);
+  }, [selectedCenter, page, debouncedSearch, selectedStatus, selectedBatch, selectedType, isCenterManager]);
 
   const fetchStats = async () => {
     if (!selectedCenter) return;
@@ -225,6 +235,14 @@ export default function MasterStudentsPage() {
     setShowProfile(true);
   };
 
+  if (centerLoading) {
+    return (
+      <div className="p-8 bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
   if (!selectedCenter) {
     return (
       <div className="p-8 bg-gray-50 min-h-screen flex items-center justify-center">
@@ -240,12 +258,12 @@ export default function MasterStudentsPage() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Students</h1>
           <p className="text-gray-600 mt-1">
-            All enrolled students at {selectedCenter.name}
+            {isCenterManager ? 'Search for a student by name, phone, or enquiry ID' : `All enrolled students at ${selectedCenter.name}`}
           </p>
         </div>
 
         {/* Stats Cards */}
-        {stats && (
+        {stats && !isCenterManager && (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             <div
               className={`bg-white rounded-xl shadow-sm border-2 p-4 cursor-pointer transition ${
@@ -309,17 +327,19 @@ export default function MasterStudentsPage() {
               />
             </div>
 
-            {/* Batch filter */}
-            <select
-              value={selectedBatch}
-              onChange={(e) => { setSelectedBatch(e.target.value); setPage(1); }}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Batches</option>
-              {batches.map((b) => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
+            {/* Batch filter (hidden for CENTER_MANAGER) */}
+            {!isCenterManager && (
+              <select
+                value={selectedBatch}
+                onChange={(e) => { setSelectedBatch(e.target.value); setPage(1); }}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Batches</option>
+                {batches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            )}
 
             {/* Clear filters */}
             {(search || selectedStatus || selectedBatch || selectedType) && (
@@ -337,13 +357,26 @@ export default function MasterStudentsPage() {
               </button>
             )}
 
-            <div className="text-sm text-gray-500">
-              {total} student{total !== 1 ? 's' : ''}
-            </div>
+            {!isCenterManager && (
+              <div className="text-sm text-gray-500">
+                {total} student{total !== 1 ? 's' : ''}
+              </div>
+            )}
           </div>
         </div>
 
+        {/* Prompt for CENTER_MANAGER when not searching */}
+        {isCenterManager && debouncedSearch.length < 2 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+            <div className="text-gray-400 mb-2">
+              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </div>
+            <p className="text-gray-500 text-sm">Type at least 2 characters to search for a student</p>
+          </div>
+        )}
+
         {/* Table */}
+        {(!isCenterManager || debouncedSearch.length >= 2) && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -357,7 +390,7 @@ export default function MasterStudentsPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Validity</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Classes</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Paid</th>
+                  {!isCenterManager && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Paid</th>}
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
                 </tr>
               </thead>
@@ -458,9 +491,11 @@ export default function MasterStudentsPage() {
                         </td>
 
                         {/* Paid */}
+                        {!isCenterManager && (
                         <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
                           {s.total_paid > 0 ? `₹${s.total_paid.toLocaleString('en-IN')}` : '-'}
                         </td>
+                        )}
 
                         {/* Status */}
                         <td className="px-4 py-3 text-center">
@@ -519,6 +554,7 @@ export default function MasterStudentsPage() {
             </div>
           )}
         </div>
+        )}
       </div>
 
       {/* Student Profile Modal */}
@@ -526,6 +562,7 @@ export default function MasterStudentsPage() {
         <StudentProfileModal
           childId={selectedChildId}
           centerId={selectedCenter.id}
+          userRole={user?.role}
           onClose={() => {
             setShowProfile(false);
             setSelectedChildId(null);

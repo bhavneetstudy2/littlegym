@@ -83,6 +83,7 @@ class BatchStudentSummary(BaseModel):
 
     child_id: int
     child_name: str
+    parent_name: Optional[str] = None
     enrollment_id: int
     batch_id: int
     batch_name: str

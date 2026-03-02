@@ -25,7 +25,7 @@ import CloseLeadModal from '@/components/leads/CloseLeadModal';
 import ConvertToEnrollmentModal from '@/components/leads/ConvertToEnrollmentModal';
 
 export default function EnhancedLeadsPage() {
-  const { selectedCenter } = useCenterContext();
+  const { selectedCenter, loading: centerLoading } = useCenterContext();
   const { user } = useAuth();
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
@@ -346,6 +346,14 @@ export default function EnhancedLeadsPage() {
 
     return actions;
   };
+
+  if (centerLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
 
   if (!selectedCenter) {
     return (

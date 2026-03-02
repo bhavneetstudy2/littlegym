@@ -139,11 +139,13 @@ interface StudentProfileContentProps {
   childId: number;
   enrollmentId?: number;
   centerId: number;
+  userRole?: string;
   onClose?: () => void;
   onBack?: () => void;
 }
 
-export default function StudentProfileContent({ childId, centerId, onClose, onBack }: StudentProfileContentProps) {
+export default function StudentProfileContent({ childId, centerId, userRole, onClose, onBack }: StudentProfileContentProps) {
+  const isCenterManager = userRole === 'CENTER_MANAGER';
   const [allEnrollments, setAllEnrollments] = useState<EnrolledStudent[]>([]);
   const [childInfo, setChildInfo] = useState<Child | null>(null);
   const [parents, setParents] = useState<Parent[]>([]);
@@ -388,12 +390,14 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
     setRenewError(null);
     if (!renewForm.batchId) { setRenewError('Please select a batch'); return; }
     if (!renewForm.bookedClasses || parseInt(renewForm.bookedClasses) <= 0) { setRenewError('Booked classes is required'); return; }
-    if (!renewForm.totalAmount || parseFloat(renewForm.totalAmount) <= 0) { setRenewError('Total amount is required'); return; }
-    if (!renewForm.paidAmount) { setRenewError('Paid amount is required'); return; }
+    if (!isCenterManager) {
+      if (!renewForm.totalAmount || parseFloat(renewForm.totalAmount) <= 0) { setRenewError('Total amount is required'); return; }
+      if (!renewForm.paidAmount) { setRenewError('Paid amount is required'); return; }
+    }
 
     setRenewSaving(true);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         child_id: childId,
         batch_id: renewForm.batchId,
         plan_type: renewForm.planType,
@@ -403,8 +407,8 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
         days_selected: renewForm.daysSelected.length > 0 ? renewForm.daysSelected : null,
         notes: renewForm.notes || null,
         payment: {
-          amount: parseFloat(renewForm.paidAmount),
-          method: renewForm.paymentMethod,
+          amount: isCenterManager ? 0 : parseFloat(renewForm.paidAmount),
+          method: isCenterManager ? 'CASH' : renewForm.paymentMethod,
           reference: renewForm.paymentRef || null,
           paid_at: new Date().toISOString(),
         },
@@ -918,7 +922,7 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
                         </div>
                       )}
 
-                      {(enrollment.total_paid > 0 || enrollment.total_discount > 0 || enrollment.payment_method) && (
+                      {!isCenterManager && (enrollment.total_paid > 0 || enrollment.total_discount > 0 || enrollment.payment_method) && (
                         <div className="mt-2 pt-2 border-t border-gray-200 flex gap-4 text-sm">
                           <div>
                             <span className="text-gray-500">Paid:</span>{' '}
@@ -1039,7 +1043,8 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
                                 <input type="date" value={renewForm.endDate} onChange={e => setRenewForm({...renewForm, endDate: e.target.value})} min={renewForm.startDate} className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm" />
                               </div>
                             </div>
-                            {/* Payment */}
+                            {/* Payment (hidden for CENTER_MANAGER) */}
+                            {!isCenterManager && (<>
                             <div className="grid grid-cols-2 gap-3">
                               <div>
                                 <label className="text-xs font-medium text-gray-700 block mb-1">Total Amount (Rs.) *</label>
@@ -1066,6 +1071,7 @@ export default function StudentProfileContent({ childId, centerId, onClose, onBa
                                 <input type="text" value={renewForm.paymentRef} onChange={e => setRenewForm({...renewForm, paymentRef: e.target.value})} placeholder="Optional" className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm" />
                               </div>
                             </div>
+                            </>)}
                             {/* Notes */}
                             <div>
                               <label className="text-xs font-medium text-gray-700 block mb-1">Notes</label>

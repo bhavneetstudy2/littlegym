@@ -170,7 +170,7 @@ def get_intro_visits(
 def create_intro_visit(
     intro_visit_data: IntroVisitCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_MANAGER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
 ):
     """Schedule an introductory visit"""
     # Verify lead exists and belongs to same center
@@ -209,7 +209,7 @@ def create_intro_visit(
 def create_enquiry(
     enquiry_data: EnquiryFormCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_MANAGER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
 ):
     """
     Create a new enquiry from the discovery form.
@@ -238,7 +238,7 @@ def create_enquiry(
 def create_lead(
     lead_data: LeadCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_MANAGER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
 ):
     """Create a new lead with child and parent information"""
     # For super admin, require center_id in lead_data; for others use their center
@@ -442,7 +442,7 @@ def update_lead(
     lead_id: int,
     lead_data: LeadUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_MANAGER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
 ):
     """Update lead information"""
     lead = LeadService.get_lead_by_id(db=db, lead_id=lead_id)
@@ -470,7 +470,7 @@ def mark_lead_dead(
     lead_id: int,
     dead_data: LeadMarkDead,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_MANAGER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
 ):
     """Mark a lead as dead with reason"""
     lead = LeadService.get_lead_by_id(db=db, lead_id=lead_id)
@@ -499,7 +499,7 @@ def mark_intro_visit_attended(
     visit_id: int,
     attendance_data: IntroVisitMarkAttended,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.TRAINER, UserRole.CENTER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.TRAINER, UserRole.CENTER_MANAGER, UserRole.CENTER_ADMIN))
 ):
     """Mark an intro visit as attended"""
     intro_visit = db.query(IntroVisit).filter(IntroVisit.id == visit_id).first()
@@ -533,7 +533,7 @@ def update_discovery_form(
     lead_id: int,
     discovery_data: DiscoveryFormUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_MANAGER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
 ):
     """Update discovery form details after initial enquiry"""
     lead = LeadService.get_lead_by_id(db=db, lead_id=lead_id)
@@ -561,7 +561,7 @@ def update_lead_status(
     lead_id: int,
     status_data: LeadStatusUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_MANAGER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
 ):
     """Manually update lead status"""
     lead = LeadService.get_lead_by_id(db=db, lead_id=lead_id)
@@ -594,7 +594,7 @@ def schedule_intro_visit_for_lead(
     lead_id: int,
     iv_data: IntroVisitCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_MANAGER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
 ):
     """Schedule an intro visit for a specific lead"""
     lead = LeadService.get_lead_by_id(db=db, lead_id=lead_id)
@@ -624,7 +624,7 @@ def update_intro_visit_with_outcome(
     iv_id: int,
     iv_data: IntroVisitUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.TRAINER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.TRAINER, UserRole.CENTER_MANAGER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
 ):
     """
     Update intro visit with attendance and outcome.
@@ -674,7 +674,7 @@ def create_follow_up_for_lead(
     lead_id: int,
     follow_up_data: FollowUpCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_MANAGER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
 ):
     """Create a follow-up task for a lead"""
     lead = LeadService.get_lead_by_id(db=db, lead_id=lead_id)
@@ -727,7 +727,7 @@ def update_follow_up_with_outcome(
     follow_up_id: int,
     follow_up_data: FollowUpUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_MANAGER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
 ):
     """Update follow-up with outcome"""
     follow_up = db.query(FollowUp).filter(FollowUp.id == follow_up_id).first()
@@ -782,7 +782,7 @@ def convert_lead_to_enrollment(
     lead_id: int,
     convert_data: LeadConvert,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_MANAGER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
 ):
     """
     Mark lead as converted and link to enrollment.
@@ -813,7 +813,7 @@ def close_lead_as_lost(
     lead_id: int,
     close_data: LeadClose,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_MANAGER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
 ):
     """Mark lead as closed/lost with reason"""
     lead = LeadService.get_lead_by_id(db=db, lead_id=lead_id)
@@ -843,7 +843,7 @@ def update_child(
     child_id: int,
     child_data: ChildUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_MANAGER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
 ):
     """Update child information including enquiry ID, name, age, DOB, school"""
     child = db.query(Child).filter(Child.id == child_id).first()
@@ -876,7 +876,7 @@ def update_parent(
     parent_id: int,
     parent_data: ParentUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
+    current_user: User = Depends(require_role(UserRole.COUNSELOR, UserRole.CENTER_MANAGER, UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN))
 ):
     """Update parent information including name, phone, email, notes"""
     parent = db.query(Parent).filter(Parent.id == parent_id).first()

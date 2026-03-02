@@ -22,6 +22,7 @@ interface Batch {
 interface StudentSummary {
   child_id: number;
   child_name: string;
+  parent_name: string | null;
   enrollment_id: number;
   batch_id: number;
   batch_name: string;
@@ -210,7 +211,7 @@ export default function AttendancePage() {
     if (activeLetter) list = list.filter((s) => s.child_name.toUpperCase().startsWith(activeLetter!));
     if (searchQuery.length >= 2) {
       const q = searchQuery.toLowerCase();
-      list = list.filter((s) => s.child_name.toLowerCase().includes(q) || String(s.enrollment_id).includes(q));
+      list = list.filter((s) => s.child_name.toLowerCase().includes(q) || (s.parent_name && s.parent_name.toLowerCase().includes(q)) || String(s.enrollment_id).includes(q));
     }
     return list;
   }, [unmarkedStudents, activeLetter, searchQuery]);
@@ -361,7 +362,7 @@ export default function AttendancePage() {
                   setSearchQuery(e.target.value);
                   if (e.target.value.length >= 2) setActiveLetter(null);
                 }}
-                placeholder="Search by child name..."
+                placeholder="Search by child or parent name..."
                 className="input pl-9 pr-8"
               />
               {searchQuery && (
@@ -498,6 +499,9 @@ export default function AttendancePage() {
                         {initials}
                       </div>
                       <div className="text-sm font-medium text-gray-900 truncate">{student.child_name}</div>
+                      {student.parent_name && (
+                        <div className="text-[11px] text-gray-400 truncate">P: {student.parent_name}</div>
+                      )}
                       <div className="text-xs text-gray-400 mt-0.5">#{student.enrollment_id}</div>
                       <div className="mt-2 flex items-center justify-center gap-1.5">
                         <span className="text-[10px] text-gray-400">{student.classes_attended}/{student.classes_booked}</span>
@@ -560,7 +564,12 @@ export default function AttendancePage() {
                               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${color}`}>
                                 {initials}
                               </div>
-                              <span className="font-medium text-gray-900 truncate">{student.child_name}</span>
+                              <div className="min-w-0">
+                                <span className="font-medium text-gray-900 truncate block">{student.child_name}</span>
+                                {student.parent_name && (
+                                  <span className="text-[11px] text-gray-400 truncate block">P: {student.parent_name}</span>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td className="px-3 py-2.5 text-gray-400 hidden sm:table-cell">#{student.enrollment_id}</td>
@@ -614,6 +623,9 @@ export default function AttendancePage() {
                           {initials}
                         </div>
                         <div className="text-sm font-medium text-emerald-900 truncate">{student.child_name}</div>
+                        {student.parent_name && (
+                          <div className="text-[11px] text-emerald-500/70 truncate">P: {student.parent_name}</div>
+                        )}
                         <div className="text-xs text-emerald-500 mt-0.5">#{student.enrollment_id}</div>
                         <button
                           onClick={() => undoPresent(student.child_id)}
@@ -658,7 +670,12 @@ export default function AttendancePage() {
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${color} ring-2 ring-emerald-400 ring-offset-1`}>
                                   {initials}
                                 </div>
-                                <span className="font-medium text-emerald-900 truncate">{student.child_name}</span>
+                                <div className="min-w-0">
+                                  <span className="font-medium text-emerald-900 truncate block">{student.child_name}</span>
+                                  {student.parent_name && (
+                                    <span className="text-[11px] text-emerald-500/70 truncate block">P: {student.parent_name}</span>
+                                  )}
+                                </div>
                               </div>
                             </td>
                             <td className="px-3 py-2.5 text-emerald-500 hidden sm:table-cell">#{student.enrollment_id}</td>

@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 import CenterContextBar from './layout/CenterContextBar';
 import StudentLookupDrawer from './StudentLookupDrawer';
+import { usePermissions } from '@/contexts/PermissionsContext';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -14,12 +15,23 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isAuthChecked, setIsAuthChecked] = useState(false);
+  const { permissions, loading: permLoading } = usePermissions();
 
-  // Role-based route restrictions
-  const roleAllowedPaths: Record<string, string[]> = {
-    TRAINER: ['/attendance', '/progress'],
-    CENTER_MANAGER: ['/attendance', '/progress', '/students'],
+  // Map routes to permission keys for configurable roles
+  const routePermissionMap: Record<string, string> = {
+    '/dashboard': 'module:dashboard',
+    '/leads': 'module:leads',
+    '/students': 'module:students',
+    '/enrollments': 'module:enrollments',
+    '/attendance': 'module:attendance',
+    '/progress': 'module:progress',
+    '/report-cards': 'module:report_cards',
+    '/renewals': 'module:renewals',
+    '/import': 'action:import_data',
   };
+
+  // Roles that use configurable permissions (not hardcoded)
+  const configurableRoles = ['CENTER_MANAGER', 'TRAINER', 'COUNSELOR'];
 
   useEffect(() => {
     // Skip auth check for login page and home page
@@ -35,24 +47,42 @@ export default function AppLayout({ children }: AppLayoutProps) {
       return;
     }
 
-    // Restrict roles to allowed modules only
+    // Wait for permissions to load before checking access
+    if (permLoading) return;
+
     const userData = localStorage.getItem('user');
     if (userData) {
       const user = JSON.parse(userData);
-      const allowedPaths = roleAllowedPaths[user.role];
-      if (allowedPaths) {
-        const isAllowed = allowedPaths.some(
-          p => pathname === p || pathname.startsWith(`${p}/`)
+
+      // SUPER_ADMIN and CENTER_ADMIN have unrestricted access
+      if (user.role === 'SUPER_ADMIN' || user.role === 'CENTER_ADMIN') {
+        setIsAuthChecked(true);
+        return;
+      }
+
+      // For configurable roles, check permissions from the database
+      if (configurableRoles.includes(user.role)) {
+        // Find which permission key matches the current route
+        const matchedRoute = Object.keys(routePermissionMap).find(
+          route => pathname === route || pathname.startsWith(`${route}/`)
         );
-        if (!isAllowed) {
-          router.push('/attendance');
-          return;
+
+        if (matchedRoute) {
+          const permKey = routePermissionMap[matchedRoute];
+          if (!permissions[permKey]) {
+            // Find the first allowed route to redirect to
+            const firstAllowed = Object.entries(routePermissionMap).find(
+              ([, pk]) => permissions[pk]
+            );
+            router.push(firstAllowed ? firstAllowed[0] : '/login');
+            return;
+          }
         }
       }
     }
 
     setIsAuthChecked(true);
-  }, [pathname, router]);
+  }, [pathname, router, permissions, permLoading]);
 
   // Don't show sidebar on login page or home page
   if (pathname === '/login' || pathname === '/') {

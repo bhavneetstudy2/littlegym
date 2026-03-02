@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { useCenter } from '@/contexts/CenterContext';
 import type { User } from '@/types';
 
 interface Center {
@@ -14,8 +15,24 @@ interface Center {
   created_at: string;
 }
 
+interface PermissionDefinition {
+  key: string;
+  label: string;
+  category: 'module' | 'action';
+}
+
+interface RolePermissions {
+  role: string;
+  permissions: Record<string, boolean>;
+}
+
+interface PermissionsConfig {
+  definitions: PermissionDefinition[];
+  roles: RolePermissions[];
+}
+
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<'users' | 'centers'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'permissions' | 'centers'>('users');
   const [users, setUsers] = useState<User[]>([]);
   const [centers, setCenters] = useState<Center[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +48,7 @@ export default function AdminPage() {
     if (currentUser) {
       if (activeTab === 'users') {
         fetchUsers();
-      } else {
+      } else if (activeTab === 'centers') {
         fetchCenters();
       }
     }
@@ -95,7 +112,7 @@ export default function AdminPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Administration</h1>
-          <p className="text-gray-600">Manage users and centers</p>
+          <p className="text-gray-600">Manage users, permissions, and centers</p>
         </div>
       </div>
 
@@ -111,6 +128,16 @@ export default function AdminPage() {
             }`}
           >
             Users
+          </button>
+          <button
+            onClick={() => setActiveTab('permissions')}
+            className={`flex-1 px-6 py-4 text-center font-medium transition ${
+              activeTab === 'permissions'
+                ? 'border-b-2 border-blue-500 text-blue-600 bg-blue-50'
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            Permissions
           </button>
           {isSuperAdmin && (
             <button
@@ -207,6 +234,11 @@ export default function AdminPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Permissions Tab */}
+      {activeTab === 'permissions' && (
+        <PermissionsTab isSuperAdmin={isSuperAdmin} currentUser={currentUser} />
       )}
 
       {/* Centers Tab */}
@@ -308,6 +340,219 @@ export default function AdminPage() {
     </div>
   );
 }
+
+// ─── Permissions Tab ─────────────────────────────────────────────────────────
+
+const ROLE_LABELS: Record<string, string> = {
+  CENTER_MANAGER: 'Center Manager',
+  TRAINER: 'Trainer',
+  COUNSELOR: 'Counselor',
+};
+
+function PermissionsTab({ isSuperAdmin, currentUser }: { isSuperAdmin: boolean; currentUser: User }) {
+  const { selectedCenter } = useCenter();
+  const [config, setConfig] = useState<PermissionsConfig | null>(null);
+  const [editedPerms, setEditedPerms] = useState<Record<string, Record<string, boolean>>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
+  const [hasChanges, setHasChanges] = useState(false);
+
+  const centerId = isSuperAdmin ? selectedCenter?.id : currentUser.center_id;
+
+  useEffect(() => {
+    if (centerId) {
+      fetchPermissions();
+    }
+  }, [centerId]);
+
+  const fetchPermissions = async () => {
+    if (!centerId) return;
+    try {
+      setLoading(true);
+      const params = isSuperAdmin ? `?center_id=${centerId}` : '';
+      const data = await api.get<PermissionsConfig>(`/api/v1/settings/permissions${params}`);
+      setConfig(data);
+
+      // Initialize editable state from fetched data
+      const perms: Record<string, Record<string, boolean>> = {};
+      for (const role of data.roles) {
+        perms[role.role] = { ...role.permissions };
+      }
+      setEditedPerms(perms);
+      setHasChanges(false);
+    } catch (err) {
+      console.error('Failed to fetch permissions:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const togglePermission = (role: string, key: string) => {
+    setEditedPerms(prev => ({
+      ...prev,
+      [role]: {
+        ...prev[role],
+        [key]: !prev[role][key],
+      },
+    }));
+    setHasChanges(true);
+    setSaveMessage('');
+  };
+
+  const saveAllPermissions = async () => {
+    if (!centerId) return;
+    setSaving(true);
+    setSaveMessage('');
+    try {
+      for (const role of Object.keys(editedPerms)) {
+        await api.put('/api/v1/settings/permissions', {
+          center_id: centerId,
+          role,
+          permissions: editedPerms[role],
+        });
+      }
+      setSaveMessage('All permissions saved successfully!');
+      setHasChanges(false);
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (err) {
+      setSaveMessage(`Failed to save: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!centerId) {
+    return (
+      <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+        {isSuperAdmin
+          ? 'Please select a center from the top bar to configure permissions.'
+          : 'No center assigned to your account.'}
+      </div>
+    );
+  }
+
+  if (loading) {
+    return <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">Loading permissions...</div>;
+  }
+
+  if (!config) {
+    return <div className="bg-white rounded-lg shadow p-8 text-center text-red-500">Failed to load permissions.</div>;
+  }
+
+  const modulePerms = config.definitions.filter(d => d.category === 'module');
+  const actionPerms = config.definitions.filter(d => d.category === 'action');
+  const roles = config.roles.map(r => r.role);
+
+  return (
+    <div>
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-sm text-gray-500">
+          Configure which modules and actions each role can access. Super Admin and Center Admin always have full access.
+        </p>
+        <button
+          onClick={saveAllPermissions}
+          disabled={saving || !hasChanges}
+          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50"
+        >
+          {saving ? 'Saving...' : 'Save All Changes'}
+        </button>
+      </div>
+
+      {saveMessage && (
+        <div className={`mb-4 p-3 rounded-lg text-sm font-medium ${
+          saveMessage.includes('Failed') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+        }`}>
+          {saveMessage}
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-64">
+                  Permission
+                </th>
+                {roles.map(role => (
+                  <th key={role} className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    {ROLE_LABELS[role] || role}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {/* Module Permissions */}
+              <tr>
+                <td colSpan={roles.length + 1} className="px-6 py-3 bg-blue-50 border-b border-blue-100">
+                  <span className="text-sm font-bold text-blue-700">Module Access</span>
+                  <span className="text-xs text-blue-500 ml-2">Which pages the role can see in the sidebar</span>
+                </td>
+              </tr>
+              {modulePerms.map(perm => (
+                <tr key={perm.key} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="px-6 py-3">
+                    <span className="text-sm font-medium text-gray-700">{perm.label}</span>
+                  </td>
+                  {roles.map(role => (
+                    <td key={role} className="px-6 py-3 text-center">
+                      <button
+                        onClick={() => togglePermission(role, perm.key)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
+                          editedPerms[role]?.[perm.key] ? 'bg-blue-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow ${
+                            editedPerms[role]?.[perm.key] ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+
+              {/* Action Permissions */}
+              <tr>
+                <td colSpan={roles.length + 1} className="px-6 py-3 bg-purple-50 border-b border-purple-100">
+                  <span className="text-sm font-bold text-purple-700">Action Permissions</span>
+                  <span className="text-xs text-purple-500 ml-2">Specific capabilities within the app</span>
+                </td>
+              </tr>
+              {actionPerms.map(perm => (
+                <tr key={perm.key} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="px-6 py-3">
+                    <span className="text-sm font-medium text-gray-700">{perm.label}</span>
+                  </td>
+                  {roles.map(role => (
+                    <td key={role} className="px-6 py-3 text-center">
+                      <button
+                        onClick={() => togglePermission(role, perm.key)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
+                          editedPerms[role]?.[perm.key] ? 'bg-blue-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow ${
+                            editedPerms[role]?.[perm.key] ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Add User Modal ──────────────────────────────────────────────────────────
 
 function AddUserModal({
   onClose,
@@ -413,6 +658,7 @@ function AddUserModal({
             >
               {isSuperAdmin && <option value="SUPER_ADMIN">Super Admin</option>}
               <option value="CENTER_ADMIN">Center Admin</option>
+              <option value="CENTER_MANAGER">Center Manager</option>
               <option value="TRAINER">Trainer</option>
               <option value="COUNSELOR">Counselor</option>
             </select>
@@ -458,6 +704,8 @@ function AddUserModal({
     </div>
   );
 }
+
+// ─── Add Center Modal ────────────────────────────────────────────────────────
 
 function AddCenterModal({
   onClose,

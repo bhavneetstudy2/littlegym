@@ -1012,7 +1012,7 @@ def add_payment(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.CENTER_ADMIN))
 ):
-    """Add an additional payment to an enrollment"""
+    """Add an additional payment to an enrollment (admin only)"""
     enrollment = EnrollmentService.get_enrollment_by_id(db=db, enrollment_id=enrollment_id)
     if not enrollment:
         raise HTTPException(status_code=404, detail="Enrollment not found")

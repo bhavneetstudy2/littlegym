@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useStudentLookup } from '@/contexts/StudentLookupContext';
+import { usePermissions } from '@/contexts/PermissionsContext';
 import {
   Building2, Database, LayoutDashboard, Users, GraduationCap, ClipboardCheck,
   CalendarCheck, TrendingUp, FileText, RefreshCw, Settings,
@@ -23,6 +24,7 @@ export default function Sidebar() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const { openLookup } = useStudentLookup();
+  const { hasPermission } = usePermissions();
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -49,24 +51,30 @@ export default function Sidebar() {
     router.push('/login');
   };
 
+  // permissionKey maps sidebar items to configurable permission keys
   const menuItems = [
-    { name: 'Centers', href: '/centers', icon: Building2, roles: ['SUPER_ADMIN'] },
-    { name: 'Master Data', href: '/mdm', icon: Database, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'] },
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'COUNSELOR'] },
-    { name: 'Leads', href: '/leads', icon: Users, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'CENTER_MANAGER', 'COUNSELOR'] },
-    { name: 'Students', href: '/students', icon: GraduationCap, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'CENTER_MANAGER', 'COUNSELOR'] },
-    { name: 'Enrollments', href: '/enrollments', icon: ClipboardCheck, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'CENTER_MANAGER', 'COUNSELOR'] },
-    { name: 'Attendance', href: '/attendance', icon: CalendarCheck, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'CENTER_MANAGER', 'TRAINER'] },
-    { name: 'Progress', href: '/progress', icon: TrendingUp, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'CENTER_MANAGER', 'TRAINER'] },
-    { name: 'Report Cards', href: '/report-cards', icon: FileText, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'] },
-    { name: 'Renewals', href: '/renewals', icon: RefreshCw, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'CENTER_MANAGER', 'COUNSELOR'] },
-    { name: 'Admin', href: '/admin', icon: Settings, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'] },
-    { name: 'Import Data', href: '/import', icon: Upload, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'] },
+    { name: 'Centers', href: '/centers', icon: Building2, roles: ['SUPER_ADMIN'], permissionKey: null },
+    { name: 'Master Data', href: '/mdm', icon: Database, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: null },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: 'module:dashboard' },
+    { name: 'Leads', href: '/leads', icon: Users, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: 'module:leads' },
+    { name: 'Students', href: '/students', icon: GraduationCap, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: 'module:students' },
+    { name: 'Enrollments', href: '/enrollments', icon: ClipboardCheck, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: 'module:enrollments' },
+    { name: 'Attendance', href: '/attendance', icon: CalendarCheck, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: 'module:attendance' },
+    { name: 'Progress', href: '/progress', icon: TrendingUp, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: 'module:progress' },
+    { name: 'Report Cards', href: '/report-cards', icon: FileText, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: 'module:report_cards' },
+    { name: 'Renewals', href: '/renewals', icon: RefreshCw, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: 'module:renewals' },
+    { name: 'Admin', href: '/admin', icon: Settings, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: null },
+    { name: 'Import Data', href: '/import', icon: Upload, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: 'action:import_data' },
   ];
 
-  const filteredMenuItems = menuItems.filter(item =>
-    user && item.roles.includes(user.role)
-  );
+  const filteredMenuItems = menuItems.filter(item => {
+    if (!user) return false;
+    // SUPER_ADMIN and CENTER_ADMIN: use hardcoded roles list (always full access)
+    if (item.roles.includes(user.role)) return true;
+    // For other roles (CENTER_MANAGER, TRAINER, COUNSELOR): check configurable permissions
+    if (item.permissionKey && hasPermission(item.permissionKey)) return true;
+    return false;
+  });
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-gray-900 to-gray-950 text-white w-60">

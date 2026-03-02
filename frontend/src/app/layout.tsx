@@ -5,6 +5,7 @@ import AppLayout from '@/components/AppLayout'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { CenterContextProvider } from '@/contexts/CenterContext'
 import { StudentLookupProvider } from '@/contexts/StudentLookupContext'
+import { PermissionsProvider } from '@/contexts/PermissionsContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -23,9 +24,11 @@ export default function RootLayout({
       <body className={inter.className}>
         <AuthProvider>
           <CenterContextProvider>
-            <StudentLookupProvider>
-              <AppLayout>{children}</AppLayout>
-            </StudentLookupProvider>
+            <PermissionsProvider>
+              <StudentLookupProvider>
+                <AppLayout>{children}</AppLayout>
+              </StudentLookupProvider>
+            </PermissionsProvider>
           </CenterContextProvider>
         </AuthProvider>
       </body>
