@@ -145,6 +145,13 @@ export default function MasterStudentsPage() {
   const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
   const [showProfile, setShowProfile] = useState(false);
 
+  // Read batch_id from URL params on mount (e.g. when navigating from dashboard batch card)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const batchId = params.get('batch_id');
+    if (batchId) setSelectedBatch(batchId);
+  }, []);
+
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -154,11 +161,11 @@ export default function MasterStudentsPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Fetch stats (not for CENTER_MANAGER)
+  // Fetch stats + batches
   useEffect(() => {
-    if (selectedCenter && !isCenterManager) {
-      fetchStats();
+    if (selectedCenter) {
       fetchBatches();
+      if (!isCenterManager) fetchStats();
     }
   }, [selectedCenter, isCenterManager]);
 

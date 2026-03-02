@@ -172,3 +172,56 @@ def get_center_stats(
         pending_renewals=row.pending_renewals or 0,
         last_activity=row.last_activity
     )
+
+
+@router.get("/{center_id}/batches-summary")
+def get_center_batches_summary(
+    center_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all active batches with active student counts for the center"""
+    if current_user.role != UserRole.SUPER_ADMIN and current_user.center_id != center_id:
+        raise HTTPException(status_code=403, detail="Access denied to this center")
+
+    sql = text("""
+        SELECT
+            b.id,
+            b.name,
+            b.age_min,
+            b.age_max,
+            b.days_of_week,
+            b.start_time,
+            b.end_time,
+            b.capacity,
+            COUNT(e.id) FILTER (WHERE e.status = 'ACTIVE' AND e.is_archived = false) AS active_students
+        FROM batches b
+        LEFT JOIN enrollments e ON e.batch_id = b.id AND e.center_id = :cid
+        WHERE b.center_id = :cid AND b.active = true AND b.is_archived = false
+        GROUP BY b.id
+        ORDER BY b.name
+    """)
+
+    rows = db.execute(sql, {"cid": center_id}).fetchall()
+
+    import json
+    result = []
+    for r in rows:
+        days = r.days_of_week
+        if isinstance(days, str):
+            try:
+                days = json.loads(days)
+            except Exception:
+                days = []
+        result.append({
+            "id": r.id,
+            "name": r.name,
+            "age_min": r.age_min,
+            "age_max": r.age_max,
+            "days_of_week": days or [],
+            "start_time": r.start_time.strftime("%H:%M") if r.start_time else None,
+            "end_time": r.end_time.strftime("%H:%M") if r.end_time else None,
+            "capacity": r.capacity,
+            "active_students": r.active_students or 0,
+        })
+    return result

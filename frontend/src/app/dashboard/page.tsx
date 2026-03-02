@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCenter } from '@/contexts/CenterContext';
 import { api } from '@/lib/api';
-import { Users, BookOpen, Calendar, Clock, Plus, ClipboardCheck, BarChart3, RefreshCw, ChevronLeft, Building2 } from 'lucide-react';
+import { Users, BookOpen, Calendar, Clock, Plus, ClipboardCheck, BarChart3, RefreshCw, ChevronLeft, Building2, ChevronRight } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import StatCard from '@/components/ui/StatCard';
 import LoadingState from '@/components/ui/LoadingState';
@@ -25,6 +25,37 @@ interface DashboardStats {
   pending_renewals: number;
 }
 
+interface BatchSummary {
+  id: number;
+  name: string;
+  age_min: number | null;
+  age_max: number | null;
+  days_of_week: string[];
+  start_time: string | null;
+  end_time: string | null;
+  capacity: number | null;
+  active_students: number;
+}
+
+const DAY_SHORT: Record<string, string> = {
+  Mon: 'M', Tue: 'T', Wed: 'W', Thu: 'Th', Fri: 'F', Sat: 'Sa', Sun: 'Su',
+};
+
+function formatTime(t: string | null): string {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
+function AgeRange({ min, max }: { min: number | null; max: number | null }) {
+  if (!min && !max) return <span className="text-gray-400 text-xs">All ages</span>;
+  if (min && max) return <span className="text-xs text-gray-500">{min}–{max} yrs</span>;
+  if (min) return <span className="text-xs text-gray-500">{min}+ yrs</span>;
+  return <span className="text-xs text-gray-500">Up to {max} yrs</span>;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { centers, selectedCenter, setSelectedCenter, loading: centersLoading } = useCenter();
@@ -36,6 +67,8 @@ export default function DashboardPage() {
     pending_renewals: 0
   });
   const [statsLoading, setStatsLoading] = useState(true);
+  const [batches, setBatches] = useState<BatchSummary[]>([]);
+  const [batchesLoading, setBatchesLoading] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -46,14 +79,13 @@ export default function DashboardPage() {
     setUser(JSON.parse(userData));
   }, [router]);
 
-  // Fetch stats when center changes - single optimized API call
+  // Fetch stats when center changes
   useEffect(() => {
     const fetchStats = async () => {
       if (!selectedCenter) {
         setStatsLoading(false);
         return;
       }
-
       setStatsLoading(true);
       try {
         const centerStats = await api.get<any>(`/api/v1/centers/${selectedCenter.id}/stats`);
@@ -69,8 +101,24 @@ export default function DashboardPage() {
         setStatsLoading(false);
       }
     };
-
     fetchStats();
+  }, [selectedCenter]);
+
+  // Fetch batches summary when center changes
+  useEffect(() => {
+    const fetchBatches = async () => {
+      if (!selectedCenter) return;
+      setBatchesLoading(true);
+      try {
+        const data = await api.get<BatchSummary[]>(`/api/v1/centers/${selectedCenter.id}/batches-summary`);
+        setBatches(data);
+      } catch (error) {
+        console.error('Failed to fetch batches:', error);
+      } finally {
+        setBatchesLoading(false);
+      }
+    };
+    fetchBatches();
   }, [selectedCenter]);
 
   if (!user) {
@@ -79,7 +127,7 @@ export default function DashboardPage() {
 
   const isSuperAdmin = user.role === 'SUPER_ADMIN';
 
-  // If Super Admin and no center selected, show center selection
+  // Super Admin with no center selected → show center picker
   if (isSuperAdmin && !selectedCenter) {
     return (
       <div className="page-container">
@@ -87,12 +135,9 @@ export default function DashboardPage() {
           title={`Welcome, ${user.name}`}
           subtitle="Super Admin - Select a center to manage"
         />
-
-        {/* Center Selection */}
         <div className="card card-body mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Select a Center</h2>
           <p className="text-gray-600 mb-6">Choose a center to view its modules and manage operations.</p>
-
           {centersLoading ? (
             <div className="text-center py-8">
               <div className="spinner mx-auto"></div>
@@ -124,8 +169,6 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-
-        {/* Quick Stats Across All Centers */}
         <div className="card card-body">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Overview - All Centers</h3>
           <p className="text-gray-500 text-sm">Select a center above to see detailed statistics and access modules.</p>
@@ -134,10 +177,9 @@ export default function DashboardPage() {
     );
   }
 
-  // Center is selected - show modules and dashboard
   return (
     <div className="page-container">
-      {/* Header with Center Info */}
+      {/* Header */}
       <PageHeader
         title={selectedCenter?.name || 'Dashboard'}
         subtitle={`${selectedCenter?.city} | ${user.role.replace('_', ' ')}`}
@@ -157,85 +199,144 @@ export default function DashboardPage() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          icon={<Users className="w-6 h-6 text-blue-600" />}
-          iconBg="bg-blue-100"
-          label="Leads"
-          value={stats.total_leads}
-          loading={statsLoading}
-        />
-        <StatCard
-          icon={<BookOpen className="w-6 h-6 text-emerald-600" />}
-          iconBg="bg-emerald-100"
-          label="Enrolled"
-          value={stats.active_enrollments}
-          loading={statsLoading}
-        />
-        <StatCard
-          icon={<Calendar className="w-6 h-6 text-purple-600" />}
-          iconBg="bg-purple-100"
-          label="Today's Classes"
-          value={stats.todays_classes}
-          loading={statsLoading}
-        />
-        <StatCard
-          icon={<Clock className="w-6 h-6 text-orange-600" />}
-          iconBg="bg-orange-100"
-          label="Renewals Due"
-          value={stats.pending_renewals}
-          loading={statsLoading}
-        />
+        <Link href="/leads">
+          <StatCard
+            icon={<Users className="w-6 h-6 text-blue-600" />}
+            iconBg="bg-blue-100"
+            label="Leads"
+            value={stats.total_leads}
+            loading={statsLoading}
+          />
+        </Link>
+        <Link href="/students">
+          <StatCard
+            icon={<BookOpen className="w-6 h-6 text-emerald-600" />}
+            iconBg="bg-emerald-100"
+            label="Enrolled"
+            value={stats.active_enrollments}
+            loading={statsLoading}
+          />
+        </Link>
+        <Link href="/attendance">
+          <StatCard
+            icon={<Calendar className="w-6 h-6 text-purple-600" />}
+            iconBg="bg-purple-100"
+            label="Today's Classes"
+            value={stats.todays_classes}
+            loading={statsLoading}
+          />
+        </Link>
+        <Link href="/renewals">
+          <StatCard
+            icon={<Clock className="w-6 h-6 text-orange-600" />}
+            iconBg="bg-orange-100"
+            label="Renewals Due"
+            value={stats.pending_renewals}
+            loading={statsLoading}
+          />
+        </Link>
       </div>
 
-      {/* Main Modules */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {/* Lead Lifecycle Module */}
-        <Link href="/leads" className="block">
-          <div className="card card-body border-t-4 border-blue-500 hover:shadow-lg transition">
-            <div className="flex items-center mb-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Users className="w-8 h-8 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-xl font-bold text-gray-900">Lead Lifecycle</h3>
-                <p className="text-gray-500">Enquiry to Enrollment</p>
-              </div>
-            </div>
-            <p className="text-gray-600 mb-4">
-              Manage the complete lead journey from initial enquiry, intro visits, follow-ups, to final conversion.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <span className="badge-blue">Discovery</span>
-              <span className="badge-blue">Intro Visits</span>
-              <span className="badge-blue">Follow-ups</span>
-              <span className="badge-blue">Conversion</span>
-            </div>
-          </div>
-        </Link>
+      {/* Batches Section */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold text-gray-900">Batches</h2>
+          <span className="text-sm text-gray-500">{batches.length} active {batches.length === 1 ? 'batch' : 'batches'}</span>
+        </div>
 
-        {/* Enrolled Students Module */}
-        <Link href="/students" className="block">
-          <div className="card card-body border-t-4 border-green-500 hover:shadow-lg transition">
-            <div className="flex items-center mb-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <BookOpen className="w-8 h-8 text-green-600" />
+        {batchesLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="card card-body animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
               </div>
-              <div className="ml-4">
-                <h3 className="text-xl font-bold text-gray-900">Enrolled Students</h3>
-                <p className="text-gray-500">Student Management</p>
-              </div>
-            </div>
-            <p className="text-gray-600 mb-4">
-              View enrolled students, mark attendance, track skill progress, and generate report cards.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <span className="badge-green">Students</span>
-              <span className="badge-green">Attendance</span>
-              <span className="badge-green">Progress</span>
-              <span className="badge-green">Reports</span>
-            </div>
+            ))}
           </div>
-        </Link>
+        ) : batches.length === 0 ? (
+          <div className="card card-body text-center py-8 text-gray-400 text-sm">
+            No active batches found. Create batches in Master Data.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {batches.map((batch) => {
+              const timeStr = batch.start_time && batch.end_time
+                ? `${formatTime(batch.start_time)} – ${formatTime(batch.end_time)}`
+                : batch.start_time
+                  ? formatTime(batch.start_time)
+                  : null;
+
+              const capacityPct = batch.capacity && batch.active_students > 0
+                ? Math.min(100, Math.round((batch.active_students / batch.capacity) * 100))
+                : null;
+
+              const capacityColor = capacityPct !== null
+                ? capacityPct >= 90 ? 'bg-red-400' : capacityPct >= 70 ? 'bg-yellow-400' : 'bg-emerald-400'
+                : 'bg-emerald-400';
+
+              return (
+                <Link
+                  key={batch.id}
+                  href={`/students?batch_id=${batch.id}`}
+                  className="card card-body group hover:shadow-md hover:ring-2 hover:ring-blue-200 transition-all cursor-pointer"
+                >
+                  {/* Batch name + arrow */}
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900 text-sm leading-tight group-hover:text-blue-700 transition-colors">
+                      {batch.name}
+                    </h3>
+                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-500 shrink-0 mt-0.5 transition-colors" />
+                  </div>
+
+                  {/* Age range */}
+                  <div className="mb-2">
+                    <AgeRange min={batch.age_min} max={batch.age_max} />
+                  </div>
+
+                  {/* Days of week pills */}
+                  {batch.days_of_week && batch.days_of_week.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {batch.days_of_week.map(day => (
+                        <span key={day} className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded font-medium">
+                          {DAY_SHORT[day] || day}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Time */}
+                  {timeStr && (
+                    <p className="text-xs text-gray-500 mb-3">{timeStr}</p>
+                  )}
+
+                  {/* Students count + capacity bar */}
+                  <div className="mt-auto">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-gray-500">Students</span>
+                      <span className="text-sm font-bold text-gray-900">
+                        {batch.active_students}
+                        {batch.capacity ? <span className="text-xs font-normal text-gray-400"> / {batch.capacity}</span> : null}
+                      </span>
+                    </div>
+                    {batch.capacity ? (
+                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                        <div
+                          className={`h-1.5 rounded-full ${capacityColor} transition-all`}
+                          style={{ width: `${capacityPct}%` }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                        <div className="h-1.5 rounded-full bg-emerald-400" style={{ width: '100%' }} />
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Quick Actions */}
@@ -247,17 +348,17 @@ export default function DashboardPage() {
             className="btn-primary flex items-center justify-center"
           >
             <Plus className="w-5 h-5 mr-2" />
-            New Lead
+            New Enquiry
           </Link>
           <Link
-            href="/students"
+            href="/attendance"
             className="btn-success flex items-center justify-center"
           >
             <ClipboardCheck className="w-5 h-5 mr-2" />
             Attendance
           </Link>
           <Link
-            href="/students"
+            href="/progress"
             className="btn bg-purple-600 text-white hover:bg-purple-700 flex items-center justify-center"
           >
             <BarChart3 className="w-5 h-5 mr-2" />
