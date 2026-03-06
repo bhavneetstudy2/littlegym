@@ -167,7 +167,15 @@ def _seed_trainer_users(engine):
         "module:progress",
     ]
 
+    TRAINER_PASSWORD = "Trainer123"  # no special chars for easier typing
+
     with Session(engine) as db:
+        # Reset ALL existing trainer passwords so they're predictable
+        all_trainers = db.query(User).filter(User.role == UserRole.TRAINER).all()
+        for t in all_trainers:
+            t.password_hash = get_password_hash(TRAINER_PASSWORD)
+            t.status = UserStatus.ACTIVE
+
         centers = db.query(Center).filter(Center.active == True).all()
         for center in centers:
             # Use center code if available (e.g. CHD), else city name (e.g. mumbai)
@@ -180,11 +188,15 @@ def _seed_trainer_users(engine):
                     name=f"Trainer {center.name}",
                     email=email,
                     phone="",
-                    password_hash=get_password_hash("Trainer@123"),
+                    password_hash=get_password_hash(TRAINER_PASSWORD),
                     role=UserRole.TRAINER,
                     status=UserStatus.ACTIVE,
                     center_id=center.id,
                 ))
+            else:
+                # Always sync password and status so it's predictable
+                existing.password_hash = get_password_hash(TRAINER_PASSWORD)
+                existing.status = UserStatus.ACTIVE
 
             # Set permissions (idempotent)
             for perm_key in TRAINER_PERMISSIONS:

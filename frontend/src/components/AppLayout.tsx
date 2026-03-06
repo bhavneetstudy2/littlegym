@@ -16,7 +16,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isAuthChecked, setIsAuthChecked] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);       // mobile overlay
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // desktop icon-only
   const { permissions, loading: permLoading } = usePermissions();
 
   // Map routes to permission keys for configurable roles
@@ -115,13 +116,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — mobile: slide overlay, desktop: inline with collapse */}
       <div className={`
-        fixed inset-y-0 left-0 z-40 lg:relative lg:z-auto
-        transition-transform duration-200 ease-in-out
+        fixed inset-y-0 left-0 z-40
+        lg:relative lg:z-auto lg:flex lg:flex-col lg:shrink-0
+        transition-all duration-200 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-60'}
       `}>
-        <Sidebar onClose={() => setSidebarOpen(false)} />
+        <Sidebar
+          onClose={() => setSidebarOpen(false)}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(c => !c)}
+        />
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
