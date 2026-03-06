@@ -86,6 +86,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
     setIsAuthChecked(true);
   }, [pathname, router, permissions, permLoading]);
 
+  // Close sidebar when navigating on mobile (must be before early returns)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
   // Don't show sidebar on login page or home page
   if (pathname === '/login' || pathname === '/') {
     return <>{children}</>;
@@ -99,11 +104,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
       </div>
     );
   }
-
-  // Close sidebar when navigating on mobile
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, [pathname]);
 
   return (
     <div className="flex h-screen bg-gray-50">
