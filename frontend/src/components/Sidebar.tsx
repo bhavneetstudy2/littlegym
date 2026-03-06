@@ -8,7 +8,7 @@ import { usePermissions } from '@/contexts/PermissionsContext';
 import {
   Building2, Database, LayoutDashboard, Users, GraduationCap, ClipboardCheck,
   CalendarCheck, TrendingUp, FileText, RefreshCw, Settings,
-  Upload, Search, LogOut,
+  Upload, Search, LogOut, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 
 interface User {
@@ -21,9 +21,11 @@ interface User {
 
 interface SidebarProps {
   onClose?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export default function Sidebar({ onClose }: SidebarProps) {
+export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -81,29 +83,39 @@ export default function Sidebar({ onClose }: SidebarProps) {
   });
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-gray-900 to-gray-950 text-white w-60">
-      {/* Logo */}
-      <div className="px-5 py-5 border-b border-white/10">
-        <h1 className="text-lg font-bold tracking-tight">Little Gym CRM</h1>
-        {user && (
-          <p className="text-xs text-gray-400 mt-1 font-medium">{user.role.replace(/_/g, ' ')}</p>
-        )}
+    <div className={`flex flex-col h-full bg-gradient-to-b from-gray-900 to-gray-950 text-white overflow-hidden transition-all duration-200 ${collapsed ? 'w-16' : 'w-60'}`}>
+      {/* Logo + collapse toggle */}
+      <div className={`flex items-center border-b border-white/10 shrink-0 ${collapsed ? 'justify-center py-4 px-2' : 'px-4 py-4 gap-2'}`}>
+        {!collapsed && <h1 className="text-base font-bold tracking-tight flex-1 truncate">Little Gym CRM</h1>}
+        {/* Collapse toggle — desktop only */}
+        <button
+          onClick={onToggleCollapse}
+          className="hidden lg:flex p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors shrink-0"
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
       </div>
 
       {/* Student Search */}
-      <div className="px-3 py-3">
+      <div className={`py-2 shrink-0 ${collapsed ? 'px-2' : 'px-3'}`}>
         <button
           onClick={openLookup}
-          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-400 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:text-white transition-colors"
+          title="Search students (Ctrl+K)"
+          className={`w-full flex items-center text-gray-400 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:text-white transition-colors ${collapsed ? 'justify-center p-2' : 'gap-2 px-3 py-2'}`}
         >
-          <Search className="w-4 h-4" />
-          <span className="text-xs">Search students...</span>
-          <kbd className="ml-auto text-[10px] text-gray-500 bg-white/10 px-1.5 py-0.5 rounded font-mono">Ctrl+K</kbd>
+          <Search className="w-4 h-4 shrink-0" />
+          {!collapsed && (
+            <>
+              <span className="text-xs flex-1 text-left">Search students...</span>
+              <kbd className="text-[10px] text-gray-500 bg-white/10 px-1.5 py-0.5 rounded font-mono">Ctrl+K</kbd>
+            </>
+          )}
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-2 px-2">
+      <nav className={`flex-1 overflow-y-auto py-1 ${collapsed ? 'px-2' : 'px-2'}`}>
         {filteredMenuItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
@@ -112,14 +124,15 @@ export default function Sidebar({ onClose }: SidebarProps) {
               key={item.href}
               href={item.href}
               onClick={onClose}
-              className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg my-0.5 transition-colors ${
-                isActive
-                  ? 'bg-white/10 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              title={collapsed ? item.name : undefined}
+              className={`flex items-center rounded-lg my-0.5 transition-colors ${
+                collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5'
+              } ${
+                isActive ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Icon className="w-[18px] h-[18px] flex-shrink-0" />
-              {item.name}
+              <Icon className="w-[18px] h-[18px] shrink-0" />
+              {!collapsed && <span className="text-sm font-medium">{item.name}</span>}
             </Link>
           );
         })}
@@ -127,18 +140,20 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
       {/* User Info & Logout */}
       {user && (
-        <div className="p-4 border-t border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+        <div className={`border-t border-white/10 shrink-0 ${collapsed ? 'p-2' : 'p-3'}`}>
+          <div className={`flex items-center ${collapsed ? 'flex-col gap-2' : 'gap-2'}`}>
+            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold text-white shrink-0">
               {user.name.charAt(0).toUpperCase()}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user.name}</p>
-              <p className="text-xs text-gray-500 truncate">{user.email}</p>
-            </div>
+            {!collapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate leading-tight">{user.name}</p>
+                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              </div>
+            )}
             <button
               onClick={handleLogout}
-              className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors shrink-0"
               title="Logout"
             >
               <LogOut className="w-4 h-4" />
