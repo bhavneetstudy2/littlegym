@@ -197,43 +197,39 @@ export default function DashboardPage() {
         }
       />
 
-      {/* Quick Stats */}
+      {/* Quick Actions — top priority */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <Link href="/leads?action=create" className="btn-primary flex items-center justify-center py-3">
+          <Plus className="w-5 h-5 mr-2" />
+          New Enquiry
+        </Link>
+        <Link href="/attendance" className="btn-success flex items-center justify-center py-3">
+          <ClipboardCheck className="w-5 h-5 mr-2" />
+          Attendance
+        </Link>
+        <Link href="/progress" className="btn bg-purple-600 text-white hover:bg-purple-700 flex items-center justify-center py-3">
+          <BarChart3 className="w-5 h-5 mr-2" />
+          Progress
+        </Link>
+        <Link href="/renewals" className="btn bg-orange-600 text-white hover:bg-orange-700 flex items-center justify-center py-3">
+          <RefreshCw className="w-5 h-5 mr-2" />
+          Renewals
+        </Link>
+      </div>
+
+      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <Link href="/leads">
-          <StatCard
-            icon={<Users className="w-6 h-6 text-blue-600" />}
-            iconBg="bg-blue-100"
-            label="Leads"
-            value={stats.total_leads}
-            loading={statsLoading}
-          />
+          <StatCard icon={<Users className="w-6 h-6 text-blue-600" />} iconBg="bg-blue-100" label="Leads" value={stats.total_leads} loading={statsLoading} />
         </Link>
         <Link href="/students">
-          <StatCard
-            icon={<BookOpen className="w-6 h-6 text-emerald-600" />}
-            iconBg="bg-emerald-100"
-            label="Enrolled"
-            value={stats.active_enrollments}
-            loading={statsLoading}
-          />
+          <StatCard icon={<BookOpen className="w-6 h-6 text-emerald-600" />} iconBg="bg-emerald-100" label="Active Enrolled" value={stats.active_enrollments} loading={statsLoading} />
         </Link>
         <Link href="/attendance">
-          <StatCard
-            icon={<Calendar className="w-6 h-6 text-purple-600" />}
-            iconBg="bg-purple-100"
-            label="Today's Classes"
-            value={stats.todays_classes}
-            loading={statsLoading}
-          />
+          <StatCard icon={<Calendar className="w-6 h-6 text-purple-600" />} iconBg="bg-purple-100" label="Today's Classes" value={stats.todays_classes} loading={statsLoading} />
         </Link>
         <Link href="/renewals">
-          <StatCard
-            icon={<Clock className="w-6 h-6 text-orange-600" />}
-            iconBg="bg-orange-100"
-            label="Renewals Due"
-            value={stats.pending_renewals}
-            loading={statsLoading}
-          />
+          <StatCard icon={<Clock className="w-6 h-6 text-orange-600" />} iconBg="bg-orange-100" label="Renewals Due" value={stats.pending_renewals} loading={statsLoading} />
         </Link>
       </div>
 
@@ -241,7 +237,7 @@ export default function DashboardPage() {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-gray-900">Batches</h2>
-          <span className="text-sm text-gray-500">{batches.length} active {batches.length === 1 ? 'batch' : 'batches'}</span>
+          <span className="text-sm text-gray-500">{batches.length} active</span>
         </div>
 
         {batchesLoading ? (
@@ -263,40 +259,25 @@ export default function DashboardPage() {
             {batches.map((batch) => {
               const timeStr = batch.start_time && batch.end_time
                 ? `${formatTime(batch.start_time)} – ${formatTime(batch.end_time)}`
-                : batch.start_time
-                  ? formatTime(batch.start_time)
-                  : null;
-
-              const capacityPct = batch.capacity && batch.active_students > 0
-                ? Math.min(100, Math.round((batch.active_students / batch.capacity) * 100))
-                : null;
-
-              const capacityColor = capacityPct !== null
-                ? capacityPct >= 90 ? 'bg-red-400' : capacityPct >= 70 ? 'bg-yellow-400' : 'bg-emerald-400'
-                : 'bg-emerald-400';
+                : batch.start_time ? formatTime(batch.start_time) : null;
 
               return (
                 <Link
                   key={batch.id}
                   href={`/students?batch_id=${batch.id}`}
-                  className="card card-body group hover:shadow-md hover:ring-2 hover:ring-blue-200 transition-all cursor-pointer"
+                  className="card card-body group hover:shadow-md hover:ring-2 hover:ring-blue-200 transition-all cursor-pointer flex flex-col"
                 >
-                  {/* Batch name + arrow */}
-                  <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-start justify-between mb-1">
                     <h3 className="font-semibold text-gray-900 text-sm leading-tight group-hover:text-blue-700 transition-colors">
                       {batch.name}
                     </h3>
                     <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-500 shrink-0 mt-0.5 transition-colors" />
                   </div>
 
-                  {/* Age range */}
-                  <div className="mb-2">
-                    <AgeRange min={batch.age_min} max={batch.age_max} />
-                  </div>
+                  <AgeRange min={batch.age_min} max={batch.age_max} />
 
-                  {/* Days of week pills */}
                   {batch.days_of_week && batch.days_of_week.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-2">
+                    <div className="flex flex-wrap gap-1 mt-2">
                       {batch.days_of_week.map(day => (
                         <span key={day} className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded font-medium">
                           {DAY_SHORT[day] || day}
@@ -305,32 +286,11 @@ export default function DashboardPage() {
                     </div>
                   )}
 
-                  {/* Time */}
-                  {timeStr && (
-                    <p className="text-xs text-gray-500 mb-3">{timeStr}</p>
-                  )}
+                  {timeStr && <p className="text-xs text-gray-500 mt-1">{timeStr}</p>}
 
-                  {/* Students count + capacity bar */}
-                  <div className="mt-auto">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-gray-500">Students</span>
-                      <span className="text-sm font-bold text-gray-900">
-                        {batch.active_students}
-                        {batch.capacity ? <span className="text-xs font-normal text-gray-400"> / {batch.capacity}</span> : null}
-                      </span>
-                    </div>
-                    {batch.capacity ? (
-                      <div className="w-full bg-gray-100 rounded-full h-1.5">
-                        <div
-                          className={`h-1.5 rounded-full ${capacityColor} transition-all`}
-                          style={{ width: `${capacityPct}%` }}
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-full bg-gray-100 rounded-full h-1.5">
-                        <div className="h-1.5 rounded-full bg-emerald-400" style={{ width: '100%' }} />
-                      </div>
-                    )}
+                  <div className="mt-auto pt-3 flex items-center justify-between">
+                    <span className="text-xs text-gray-500">Active students</span>
+                    <span className="text-lg font-bold text-gray-900">{batch.active_students}</span>
                   </div>
                 </Link>
               );
@@ -339,40 +299,6 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Quick Actions */}
-      <div className="card card-body">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Link
-            href="/leads?action=create"
-            className="btn-primary flex items-center justify-center"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            New Enquiry
-          </Link>
-          <Link
-            href="/attendance"
-            className="btn-success flex items-center justify-center"
-          >
-            <ClipboardCheck className="w-5 h-5 mr-2" />
-            Attendance
-          </Link>
-          <Link
-            href="/progress"
-            className="btn bg-purple-600 text-white hover:bg-purple-700 flex items-center justify-center"
-          >
-            <BarChart3 className="w-5 h-5 mr-2" />
-            Progress
-          </Link>
-          <Link
-            href="/renewals"
-            className="btn bg-orange-600 text-white hover:bg-orange-700 flex items-center justify-center"
-          >
-            <RefreshCw className="w-5 h-5 mr-2" />
-            Renewals
-          </Link>
-        </div>
-      </div>
     </div>
   );
 }

@@ -30,7 +30,7 @@ export default function UpdateIVModal({ ivId, onClose, onSuccess }: UpdateIVModa
   const fetchIntroVisit = async () => {
     setLoadingIV(true);
     try {
-      const data = await api.get<IntroVisit>(`/api/v1/intro-visits/${ivId}`);
+      const data = await api.get<IntroVisit>(`/api/v1/leads/intro-visits/${ivId}`);
       setIntroVisit(data);
 
       // Pre-fill form with existing data
@@ -59,7 +59,13 @@ export default function UpdateIVModal({ ivId, onClose, onSuccess }: UpdateIVModa
     setLoading(true);
 
     try {
-      await api.patch(`/api/v1/intro-visits/${ivId}`, formData);
+      const payload = {
+        ...formData,
+        attended_at: formData.attended_at || null,
+        outcome: formData.outcome || null,
+        outcome_notes: formData.outcome_notes || null,
+      };
+      await api.patch(`/api/v1/leads/intro-visits/${ivId}`, payload);
       setSuccess(true);
       setTimeout(() => {
         onSuccess();
@@ -143,7 +149,6 @@ export default function UpdateIVModal({ ivId, onClose, onSuccess }: UpdateIVModa
                 type="datetime-local"
                 value={formData.attended_at || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, attended_at: e.target.value }))}
-                max={new Date().toISOString().slice(0, 16)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <p className="text-xs text-gray-500 mt-1">

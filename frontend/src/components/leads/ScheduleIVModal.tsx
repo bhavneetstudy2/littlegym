@@ -109,7 +109,6 @@ export default function ScheduleIVModal({ leadId, onClose, onSuccess }: Schedule
                 type="datetime-local"
                 value={formData.scheduled_at}
                 onChange={(e) => setFormData(prev => ({ ...prev, scheduled_at: e.target.value }))}
-                min={getMinDateTime()}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />

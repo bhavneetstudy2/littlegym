@@ -55,6 +55,31 @@ app.include_router(weekly_progress.router, prefix="/api/v1")
 app.include_router(settings.router, prefix="/api/v1")
 
 
+@app.on_event("startup")
+async def run_schema_migrations():
+    """Run any schema migrations that weren't in initial setup."""
+    try:
+        from app.core.database import engine
+        from sqlalchemy import text
+        # Import all models so their metadata is registered before create_all
+        import app.models  # noqa: F401
+        from app.models.base import Base
+
+        # Create any missing tables (no-op for existing tables)
+        Base.metadata.create_all(engine, checkfirst=True)
+        logger.info("Schema migration: ensured all tables exist")
+
+        # Add activity_categories.active column if it was created before this column existed
+        with engine.connect() as conn:
+            conn.execute(text(
+                "ALTER TABLE activity_categories ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE"
+            ))
+            conn.commit()
+        logger.info("Schema migration: activity_categories.active column ensured")
+    except Exception as e:
+        logger.warning(f"Schema migration warning (non-fatal): {e}")
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception: {exc}")

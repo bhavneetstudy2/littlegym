@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, Integer, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, String, Text, Integer, ForeignKey, Enum as SQLEnum, Boolean
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
 from app.utils.enums import MeasurementType
@@ -17,6 +17,7 @@ class ActivityCategory(BaseModel):
     )
     measurement_unit = Column(String(50), nullable=True)  # e.g., "reps", "seconds", "cm"
     display_order = Column(Integer, default=0, nullable=False)
+    active = Column(Boolean, nullable=True, default=True)  # NULL treated as active; added after initial schema
     description = Column(Text, nullable=True)
 
     # Relationships

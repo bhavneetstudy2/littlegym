@@ -53,6 +53,13 @@ const mdmCards: MDMCard[] = [
     href: '/mdm/center/users',
     scope: 'center',
   },
+  {
+    title: 'Progress Settings',
+    description: 'Define curricula, activity fields, levels, and map them to batches',
+    icon: '📊',
+    href: '/mdm/center/progress-settings',
+    scope: 'center',
+  },
 ];
 
 export default function MDMPage() {
