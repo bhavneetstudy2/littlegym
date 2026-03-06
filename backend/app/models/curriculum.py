@@ -16,7 +16,6 @@ class Curriculum(BaseModel):
     center_id = Column(Integer, ForeignKey("centers.id"), nullable=True)  # Null = global curriculum
     is_global = Column(Boolean, default=False, nullable=False)
     active = Column(Boolean, default=True, nullable=False, index=True)
-    curriculum_type = Column(String(50), default="GYMNASTICS", nullable=False)
 
     # Relationships
     skills = relationship("Skill", back_populates="curriculum", cascade="all, delete-orphan")

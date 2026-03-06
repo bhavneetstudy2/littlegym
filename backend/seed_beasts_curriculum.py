@@ -92,7 +92,6 @@ def seed(center_id=None, batch_name=None):
                 center_id=center_id,
                 is_global=(center_id is None),
                 active=True,
-                curriculum_type="GYMNASTICS",
             )
             db.add(curriculum)
             db.flush()  # get the id

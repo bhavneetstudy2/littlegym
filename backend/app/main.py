@@ -99,7 +99,6 @@ def _seed_gymnastics_curriculum(engine):
                     center_id=center_id,
                     is_global=False,
                     active=True,
-                    curriculum_type="GYMNASTICS",
                 )
                 db.add(curriculum)
                 db.flush()
@@ -218,9 +217,6 @@ async def run_schema_migrations():
         with engine.connect() as conn:
             conn.execute(text(
                 "ALTER TABLE activity_categories ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE"
-            ))
-            conn.execute(text(
-                "ALTER TABLE curricula ADD COLUMN IF NOT EXISTS curriculum_type VARCHAR(50) NOT NULL DEFAULT 'GYMNASTICS'"
             ))
             conn.commit()
         logger.info("Schema migration: columns ensured")

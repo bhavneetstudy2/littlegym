@@ -28,7 +28,6 @@ if not gym_curriculum:
         description="Core gymnastics skills tracked weekly for non-Grade School batches",
         is_global=True,
         active=True,
-        curriculum_type="GYMNASTICS",
     )
     db.add(gym_curriculum)
     db.commit()
@@ -280,7 +279,6 @@ if not gs_curriculum:
         description="Fitness assessments for Grade School students - measured numerically",
         is_global=True,
         active=True,
-        curriculum_type="FITNESS",
     )
     db.add(gs_curriculum)
     db.commit()

@@ -79,7 +79,7 @@ def create_curriculum(
         center_id=effective_center_id,
         is_global=False,
         active=True,
-        curriculum_type=data.get("curriculum_type", "GYMNASTICS"),
+        
         created_by_id=current_user.id,
         updated_by_id=current_user.id,
     )
