@@ -143,21 +143,23 @@ export default function ProgressPage() {
     setSheetOpen(false);
   }, [selectedBatchId, batchMappings]);
 
-  // Load activity categories when curriculum changes
+  // Load activity categories + students in parallel when batch/curriculum changes
   useEffect(() => {
-    if (!selectedCurriculumId) { setActivityCategories([]); return; }
-    api.get<ActivityCategory[]>(`/api/v1/progress/activity-categories?curriculum_id=${selectedCurriculumId}`)
-      .then(d => setActivityCategories(d))
-      .catch(() => setActivityCategories([]));
-  }, [selectedCurriculumId]);
-
-  // Load students when batch/curriculum changes
-  useEffect(() => {
-    if (!selectedBatchId || !selectedCurriculumId || !selectedCenter) return;
+    if (!selectedBatchId || !selectedCurriculumId || !selectedCenter) {
+      if (!selectedCurriculumId) setActivityCategories([]);
+      return;
+    }
     setLoadingStudents(true);
-    api.get<BatchStudentProgressSummary[]>(
-      `/api/v1/progress/batch-summary/${selectedBatchId}?curriculum_id=${selectedCurriculumId}&${centerParam}`
-    ).then(d => setStudents(d)).catch(() => setStudents([])).finally(() => setLoadingStudents(false));
+    Promise.all([
+      api.get<ActivityCategory[]>(`/api/v1/progress/activity-categories?curriculum_id=${selectedCurriculumId}`)
+        .catch(() => [] as ActivityCategory[]),
+      api.get<BatchStudentProgressSummary[]>(
+        `/api/v1/progress/batch-summary/${selectedBatchId}?curriculum_id=${selectedCurriculumId}&${centerParam}`
+      ).catch(() => [] as BatchStudentProgressSummary[]),
+    ]).then(([cats, stds]) => {
+      setActivityCategories(cats);
+      setStudents(stds);
+    }).finally(() => setLoadingStudents(false));
   }, [selectedBatchId, selectedCurriculumId, selectedCenter]);
 
   // Load weekly progress for a student+week
@@ -220,25 +222,18 @@ export default function ProgressPage() {
       },
     }));
     try {
-      // Build full entries list (all current skill values)
-      const entries: WeeklyProgressEntry[] = activityCategories.map(cat => {
-        if (cat.id === actCatId) {
-          return { activity_category_id: actCatId, progression_level_id: levelId, numeric_value: null, notes: null };
-        }
-        const cur = weekProgress[cat.id];
-        return {
-          activity_category_id: cat.id,
-          progression_level_id: cur?.progression_level_id ?? null,
-          numeric_value: cur?.numeric_value ?? null,
-          notes: cur?.notes ?? null,
-        };
-      });
+      // Only send the single changed skill — backend uses INSERT ON CONFLICT
       const payload: WeeklyProgressBulkPayload = {
         child_id: student.child_id,
         enrollment_id: student.enrollment_id,
         week_number: weekNumber,
         week_start_date: weekStartDate(student.enrollment_start_date, weekNumber),
-        entries,
+        entries: [{
+          activity_category_id: actCatId,
+          progression_level_id: levelId,
+          numeric_value: null,
+          notes: null,
+        }],
       };
       await api.post(`/api/v1/progress/weekly/bulk-update?${centerParam}`, payload);
     } catch {
@@ -545,19 +540,19 @@ export default function ProgressPage() {
                                 }}
                                 onBlur={e => {
                                   const val = e.target.value ? Number(e.target.value) : null;
-                                  saveSkill(selectedStudent, cat.id, null);
+                                  setSavingSkill(cat.id);
                                   void api.post(`/api/v1/progress/weekly/bulk-update?${centerParam}`, {
                                     child_id: selectedStudent.child_id,
                                     enrollment_id: selectedStudent.enrollment_id,
                                     week_number: weekNumber,
                                     week_start_date: weekStartDate(selectedStudent.enrollment_start_date, weekNumber),
-                                    entries: activityCategories.map(c => ({
-                                      activity_category_id: c.id,
-                                      progression_level_id: c.id === cat.id ? null : (weekProgress[c.id]?.progression_level_id ?? null),
-                                      numeric_value: c.id === cat.id ? val : (weekProgress[c.id]?.numeric_value ?? null),
-                                      notes: weekProgress[c.id]?.notes ?? null,
-                                    })),
-                                  } as WeeklyProgressBulkPayload).catch(() => {});
+                                    entries: [{
+                                      activity_category_id: cat.id,
+                                      progression_level_id: null,
+                                      numeric_value: val,
+                                      notes: null,
+                                    }],
+                                  } as WeeklyProgressBulkPayload).catch(() => {}).finally(() => setSavingSkill(null));
                                 }}
                                 placeholder="—"
                                 className="w-28 px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-center"
