@@ -114,7 +114,9 @@ export default function ProgressPage() {
         setCurricula(currData);
 
         if (activeBatches.length > 0 && !selectedBatchId) {
-          const firstBatch = activeBatches[0];
+          // Prefer a batch that has a curriculum mapped, otherwise first batch
+          const batchWithCurriculum = activeBatches.find(b => mappingData.some(m => m.batch_id === b.id));
+          const firstBatch = batchWithCurriculum || activeBatches[0];
           setSelectedBatchId(firstBatch.id);
           const mapping = mappingData.find(m => m.batch_id === firstBatch.id);
           if (mapping) setSelectedCurriculumId(mapping.curriculum_id);
