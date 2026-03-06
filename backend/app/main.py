@@ -154,21 +154,67 @@ def _seed_gymnastics_curriculum(engine):
         db.commit()
 
 
+def _seed_trainer_users(engine):
+    """Idempotent seed: create trainer accounts for each center + set TRAINER role permissions."""
+    from sqlalchemy.orm import Session
+    from app.models import User, RolePermission, Center
+    from app.utils.enums import UserRole, UserStatus
+    from app.core.security import get_password_hash
+
+    # Trainer permissions: view students, attendance, progress only
+    TRAINER_PERMISSIONS = [
+        "module:students",
+        "module:attendance",
+        "module:progress",
+    ]
+
+    with Session(engine) as db:
+        centers = db.query(Center).filter(Center.active == True).all()
+        for center in centers:
+            # Use center code if available (e.g. CHD), else city name (e.g. mumbai)
+            slug = (center.code or center.city or "center").lower().replace(" ", "")
+            email = f"trainer.{slug}@thelittlegym.in"
+
+            existing = db.query(User).filter(User.email == email).first()
+            if not existing:
+                db.add(User(
+                    name=f"Trainer {center.name}",
+                    email=email,
+                    phone="",
+                    password_hash=get_password_hash("Trainer@123"),
+                    role=UserRole.TRAINER,
+                    status=UserStatus.ACTIVE,
+                    center_id=center.id,
+                ))
+
+            # Set permissions (idempotent)
+            for perm_key in TRAINER_PERMISSIONS:
+                exists = db.query(RolePermission).filter(
+                    RolePermission.center_id == center.id,
+                    RolePermission.role == UserRole.TRAINER,
+                    RolePermission.permission_key == perm_key,
+                ).first()
+                if not exists:
+                    db.add(RolePermission(
+                        center_id=center.id,
+                        role=UserRole.TRAINER,
+                        permission_key=perm_key,
+                        is_allowed=True,
+                    ))
+
+        db.commit()
+
+
 @app.on_event("startup")
 async def run_schema_migrations():
     """Run any schema migrations that weren't in initial setup."""
+    from app.core.database import engine
+    from sqlalchemy import text
+    import app.models  # noqa: F401
+    from app.models.base import Base
+
+    # Step 1: Add missing columns (always runs, separate try so seeding still runs even if this fails)
     try:
-        from app.core.database import engine
-        from sqlalchemy import text
-        # Import all models so their metadata is registered before create_all
-        import app.models  # noqa: F401
-        from app.models.base import Base
-
-        # Create any missing tables (no-op for existing tables)
-        Base.metadata.create_all(engine, checkfirst=True)
-        logger.info("Schema migration: ensured all tables exist")
-
-        # Add missing columns to existing tables
         with engine.connect() as conn:
             conn.execute(text(
                 "ALTER TABLE activity_categories ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE"
@@ -177,13 +223,29 @@ async def run_schema_migrations():
                 "ALTER TABLE curricula ADD COLUMN IF NOT EXISTS curriculum_type VARCHAR(50) NOT NULL DEFAULT 'GYMNASTICS'"
             ))
             conn.commit()
-        logger.info("Schema migration: activity_categories.active and curricula.curriculum_type ensured")
+        logger.info("Schema migration: columns ensured")
+    except Exception as e:
+        logger.warning(f"Schema migration (columns) warning: {e}")
 
-        # Seed Gymnastics Foundation curriculum if it doesn't exist
+    # Step 2: Create any missing tables
+    try:
+        Base.metadata.create_all(engine, checkfirst=True)
+        logger.info("Schema migration: tables ensured")
+    except Exception as e:
+        logger.warning(f"Schema migration (tables) warning: {e}")
+
+    # Step 3: Seed data
+    try:
         _seed_gymnastics_curriculum(engine)
         logger.info("Seed: Gymnastics Foundation curriculum ensured")
     except Exception as e:
-        logger.warning(f"Schema migration warning (non-fatal): {e}")
+        logger.warning(f"Seed (curriculum) warning: {e}")
+
+    try:
+        _seed_trainer_users(engine)
+        logger.info("Seed: trainer users ensured")
+    except Exception as e:
+        logger.warning(f"Seed (trainers) warning: {e}")
 
 
 @app.exception_handler(Exception)
