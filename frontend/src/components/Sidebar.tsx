@@ -19,7 +19,11 @@ interface User {
   center_id: number | null;
 }
 
-export default function Sidebar() {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+export default function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -107,6 +111,7 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onClose}
               className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg my-0.5 transition-colors ${
                 isActive
                   ? 'bg-white/10 text-white'

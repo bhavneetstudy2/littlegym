@@ -55,6 +55,105 @@ app.include_router(weekly_progress.router, prefix="/api/v1")
 app.include_router(settings.router, prefix="/api/v1")
 
 
+def _seed_gymnastics_curriculum(engine):
+    """Idempotent seed: create Gymnastics Foundation curriculum + skills for all centers with a 'Beasts' batch."""
+    from sqlalchemy.orm import Session
+    from app.models import Curriculum, ActivityCategory, ProgressionLevel, Batch, BatchMapping
+
+    CURRICULUM_NAME = "Gymnastics Foundation"
+    SKILLS = [
+        ("Floor Skills", "Log Roll"), ("Floor Skills", "Forward Roll"),
+        ("Floor Skills", "Backward Roll"), ("Floor Skills", "Monkey Movement"),
+        ("Floor Skills", "Donkey Kick"), ("Floor Skills", "Tummy Roll"),
+        ("Beam & Bar - Balance", "Side Walk"), ("Beam & Bar - Balance", "Back Walk"),
+        ("Beam & Bar - Balance", "Front Walk"), ("Beam & Bar - Balance", "Kick Walk"),
+        ("Beam & Bar - Balance", "Low Beam Walk"), ("Beam & Bar - Balance", "High Beam Walk"),
+        ("Beam & Bar - Balance", "Balancing"),
+        ("Beam & Bar - Hanging", "Hang Hold"), ("Beam & Bar - Hanging", "Hang & Swing"),
+        ("Beam & Bar - Hanging", "Front Support"), ("Beam & Bar - Hanging", "Backseat Circle"),
+        ("Beam & Bar - Hanging", "Tommy Roll"),
+        ("Vault", "Jump on Springboard"), ("Vault", "Balance on Hot Dog"),
+    ]
+    LEVELS = [(1, "Not Attempted"), (2, "With Support"), (3, "Without Support")]
+
+    with Session(engine) as db:
+        # Find all centers that have a Beasts batch
+        beasts_batches = db.query(Batch).filter(
+            Batch.name.ilike("%beasts%"), Batch.active == True
+        ).all()
+        center_ids = list({b.center_id for b in beasts_batches})
+
+        if not center_ids:
+            return  # Nothing to seed
+
+        for center_id in center_ids:
+            # Get or create curriculum for this center
+            curriculum = db.query(Curriculum).filter(
+                Curriculum.name == CURRICULUM_NAME,
+                Curriculum.center_id == center_id,
+            ).first()
+            if not curriculum:
+                curriculum = Curriculum(
+                    name=CURRICULUM_NAME,
+                    description="Core gymnastics skills for the Beasts batch",
+                    center_id=center_id,
+                    is_global=False,
+                    active=True,
+                    curriculum_type="GYMNASTICS",
+                )
+                db.add(curriculum)
+                db.flush()
+
+            # Create skills
+            for order, (group, skill_name) in enumerate(SKILLS):
+                cat = db.query(ActivityCategory).filter(
+                    ActivityCategory.curriculum_id == curriculum.id,
+                    ActivityCategory.name == skill_name,
+                ).first()
+                if not cat:
+                    cat = ActivityCategory(
+                        curriculum_id=curriculum.id,
+                        name=skill_name,
+                        category_group=group,
+                        measurement_type="LEVEL",
+                        display_order=order,
+                        active=True,
+                    )
+                    db.add(cat)
+                    db.flush()
+
+                for level_num, level_name in LEVELS:
+                    exists = db.query(ProgressionLevel).filter(
+                        ProgressionLevel.activity_category_id == cat.id,
+                        ProgressionLevel.level_number == level_num,
+                    ).first()
+                    if not exists:
+                        db.add(ProgressionLevel(
+                            activity_category_id=cat.id,
+                            level_number=level_num,
+                            name=level_name,
+                        ))
+
+            # Map all Beasts batches for this center to this curriculum
+            center_beasts = [b for b in beasts_batches if b.center_id == center_id]
+            for batch in center_beasts:
+                mapping = db.query(BatchMapping).filter(
+                    BatchMapping.batch_id == batch.id,
+                    BatchMapping.center_id == center_id,
+                ).first()
+                if not mapping:
+                    db.add(BatchMapping(
+                        batch_id=batch.id,
+                        curriculum_id=curriculum.id,
+                        center_id=center_id,
+                        is_archived=False,
+                    ))
+                elif mapping.curriculum_id != curriculum.id:
+                    mapping.curriculum_id = curriculum.id
+
+        db.commit()
+
+
 @app.on_event("startup")
 async def run_schema_migrations():
     """Run any schema migrations that weren't in initial setup."""
@@ -69,13 +168,20 @@ async def run_schema_migrations():
         Base.metadata.create_all(engine, checkfirst=True)
         logger.info("Schema migration: ensured all tables exist")
 
-        # Add activity_categories.active column if it was created before this column existed
+        # Add missing columns to existing tables
         with engine.connect() as conn:
             conn.execute(text(
                 "ALTER TABLE activity_categories ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE"
             ))
+            conn.execute(text(
+                "ALTER TABLE curricula ADD COLUMN IF NOT EXISTS curriculum_type VARCHAR(50) NOT NULL DEFAULT 'GYMNASTICS'"
+            ))
             conn.commit()
-        logger.info("Schema migration: activity_categories.active column ensured")
+        logger.info("Schema migration: activity_categories.active and curricula.curriculum_type ensured")
+
+        # Seed Gymnastics Foundation curriculum if it doesn't exist
+        _seed_gymnastics_curriculum(engine)
+        logger.info("Seed: Gymnastics Foundation curriculum ensured")
     except Exception as e:
         logger.warning(f"Schema migration warning (non-fatal): {e}")
 

@@ -6,6 +6,7 @@ import Sidebar from './Sidebar';
 import CenterContextBar from './layout/CenterContextBar';
 import StudentLookupDrawer from './StudentLookupDrawer';
 import { usePermissions } from '@/contexts/PermissionsContext';
+import { Menu } from 'lucide-react';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -15,6 +16,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isAuthChecked, setIsAuthChecked] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { permissions, loading: permLoading } = usePermissions();
 
   // Map routes to permission keys for configurable roles
@@ -98,10 +100,41 @@ export default function AppLayout({ children }: AppLayoutProps) {
     );
   }
 
+  // Close sidebar when navigating on mobile
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Mobile backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`
+        fixed inset-y-0 left-0 z-40 lg:relative lg:z-auto
+        transition-transform duration-200 ease-in-out
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        <Sidebar onClose={() => setSidebarOpen(false)} />
+      </div>
+
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {/* Mobile top bar with hamburger */}
+        <div className="flex items-center lg:hidden bg-white border-b border-gray-200 px-3 py-2 gap-2 shrink-0">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <span className="font-semibold text-gray-900 text-sm">Little Gym CRM</span>
+        </div>
         <CenterContextBar />
         <main className="flex-1 overflow-y-auto">
           {children}
