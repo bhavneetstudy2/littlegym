@@ -31,8 +31,12 @@ interface CampEnrollment {
   parent_email: string | null;
   notes: string | null;
   status: string;
+  payment_status: string;
   payment_amount: number | null;
+  amount_paid: number | null;
   payment_method: string | null;
+  payment_reference: string | null;
+  payment_date: string | null;
   lead_created?: boolean;
   created_at: string | null;
 }
@@ -185,8 +189,12 @@ function EnrollModal({ camp, onClose, onEnrolled, centerParam, centerId }: {
     parent_phone: '',
     parent_email: '',
     notes: '',
+    payment_status: 'PENDING',
     payment_amount: '',
+    amount_paid: '',
     payment_method: '',
+    payment_reference: '',
+    payment_date: '',
   });
 
   const [saving, setSaving] = useState(false);
@@ -211,14 +219,16 @@ function EnrollModal({ camp, onClose, onEnrolled, centerParam, centerId }: {
 
     setSaving(true);
     try {
+      const paymentFields = {
+        payment_status: form.payment_status || 'PENDING',
+        payment_amount: form.payment_amount ? Number(form.payment_amount) : null,
+        amount_paid: form.amount_paid ? Number(form.amount_paid) : null,
+        payment_method: form.payment_method || null,
+        payment_reference: form.payment_reference || null,
+        payment_date: form.payment_date || null,
+      };
       const payload = isExisting
-        ? {
-            is_existing_student: true,
-            child_id: selectedStudent!.child_id,
-            notes: form.notes || null,
-            payment_amount: form.payment_amount ? Number(form.payment_amount) : null,
-            payment_method: form.payment_method || null,
-          }
+        ? { is_existing_student: true, child_id: selectedStudent!.child_id, notes: form.notes || null, ...paymentFields }
         : {
             is_existing_student: false,
             child_name: form.child_name,
@@ -227,8 +237,7 @@ function EnrollModal({ camp, onClose, onEnrolled, centerParam, centerId }: {
             parent_phone: form.parent_phone || null,
             parent_email: form.parent_email || null,
             notes: form.notes || null,
-            payment_amount: form.payment_amount ? Number(form.payment_amount) : null,
-            payment_method: form.payment_method || null,
+            ...paymentFields,
           };
 
       const enrollment = await api.post<CampEnrollment>(
@@ -341,24 +350,66 @@ function EnrollModal({ camp, onClose, onEnrolled, centerParam, centerId }: {
             </>
           )}
 
-          {/* Common fields */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">Payment Amount (₹)</label>
-              <input type="number" min="0" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Optional"
-                value={form.payment_amount} onChange={e => setForm(f => ({ ...f, payment_amount: e.target.value }))} />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1">Payment Method</label>
-              <select className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-                value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))}>
-                <option value="">Select...</option>
-                <option>CASH</option>
-                <option>UPI</option>
-                <option>CARD</option>
-                <option>BANK_TRANSFER</option>
-              </select>
+          {/* Payment section */}
+          <div className="border-t border-gray-100 pt-4">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Payment</p>
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                {(['PENDING', 'PARTIAL', 'PAID'] as const).map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, payment_status: s }))}
+                    className={`py-2 rounded-xl text-xs font-semibold border transition ${
+                      form.payment_status === s
+                        ? s === 'PAID' ? 'bg-green-500 text-white border-green-500'
+                          : s === 'PARTIAL' ? 'bg-amber-500 text-white border-amber-500'
+                          : 'bg-gray-500 text-white border-gray-500'
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Total Fee (₹)</label>
+                  <input type="number" min="0" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="0"
+                    value={form.payment_amount} onChange={e => setForm(f => ({ ...f, payment_amount: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Amount Paid (₹)</label>
+                  <input type="number" min="0" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="0"
+                    value={form.amount_paid} onChange={e => setForm(f => ({ ...f, amount_paid: e.target.value }))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Method</label>
+                  <select className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                    value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))}>
+                    <option value="">Select...</option>
+                    <option>CASH</option>
+                    <option>UPI</option>
+                    <option>CARD</option>
+                    <option>BANK_TRANSFER</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Date</label>
+                  <input type="date" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    value={form.payment_date} onChange={e => setForm(f => ({ ...f, payment_date: e.target.value }))} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Reference / Transaction ID</label>
+                <input className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="UPI ref, cheque no, etc."
+                  value={form.payment_reference} onChange={e => setForm(f => ({ ...f, payment_reference: e.target.value }))} />
+              </div>
             </div>
           </div>
           <div>
@@ -588,16 +639,29 @@ export default function CampsPage() {
                         {(e.child_name || '?').charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{e.child_name || '—'}</p>
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-medium text-gray-900 truncate">{e.child_name || '—'}</p>
                           {e.is_existing_student ? (
-                            <span className="text-green-600 font-medium">Existing</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 font-medium shrink-0">Existing</span>
                           ) : (
-                            <span className="text-orange-500 font-medium">New</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium shrink-0">New</span>
                           )}
-                          {e.parent_phone && <span>{e.parent_phone}</span>}
-                          {e.payment_amount && <span>₹{e.payment_amount}</span>}
                         </div>
+                        <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400">
+                          {/* Payment status badge */}
+                          <span className={`font-semibold ${
+                            e.payment_status === 'PAID' ? 'text-green-600'
+                            : e.payment_status === 'PARTIAL' ? 'text-amber-600'
+                            : 'text-gray-400'
+                          }`}>
+                            {e.payment_status === 'PAID' ? '✓ Paid'
+                              : e.payment_status === 'PARTIAL' ? `Partial ₹${e.amount_paid ?? 0}`
+                              : 'Pending'}
+                          </span>
+                          {e.payment_amount && <span className="text-gray-300">· ₹{e.payment_amount} total</span>}
+                          {e.payment_method && <span>{e.payment_method}</span>}
+                        </div>
+                        {e.parent_phone && <p className="text-xs text-gray-400 mt-0.5">{e.parent_phone}</p>}
                       </div>
                       <button
                         onClick={() => cancelEnrollment(e)}

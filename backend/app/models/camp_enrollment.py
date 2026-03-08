@@ -10,6 +10,12 @@ class CampEnrollmentStatus(str, enum.Enum):
     WAITLISTED = "WAITLISTED"
 
 
+class PaymentStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    PAID = "PAID"
+    PARTIAL = "PARTIAL"
+
+
 class CampEnrollment(BaseModel, TenantMixin):
     """Enrollment of a child (existing or new) into a camp"""
 
@@ -35,8 +41,16 @@ class CampEnrollment(BaseModel, TenantMixin):
         default=CampEnrollmentStatus.ENROLLED,
         nullable=False,
     )
+    payment_status = Column(
+        SQLEnum(PaymentStatus),
+        default=PaymentStatus.PENDING,
+        nullable=False,
+    )
     payment_amount = Column(Numeric(10, 2), nullable=True)
+    amount_paid = Column(Numeric(10, 2), nullable=True)
     payment_method = Column(String(50), nullable=True)
+    payment_reference = Column(String(255), nullable=True)
+    payment_date = Column(Date, nullable=True)
 
     camp = relationship("Camp", back_populates="enrollments")
     child = relationship("Child")

@@ -262,6 +262,19 @@ async def run_schema_migrations():
             conn.execute(text(
                 "ALTER TABLE activity_categories ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE"
             ))
+            # Payment detail columns for camp_enrollments (added after initial deploy)
+            conn.execute(text(
+                "ALTER TABLE camp_enrollments ADD COLUMN IF NOT EXISTS payment_status VARCHAR DEFAULT 'PENDING'"
+            ))
+            conn.execute(text(
+                "ALTER TABLE camp_enrollments ADD COLUMN IF NOT EXISTS amount_paid NUMERIC(10,2)"
+            ))
+            conn.execute(text(
+                "ALTER TABLE camp_enrollments ADD COLUMN IF NOT EXISTS payment_reference VARCHAR(255)"
+            ))
+            conn.execute(text(
+                "ALTER TABLE camp_enrollments ADD COLUMN IF NOT EXISTS payment_date DATE"
+            ))
             conn.commit()
         logger.info("Schema migration: columns ensured")
     except Exception as e:

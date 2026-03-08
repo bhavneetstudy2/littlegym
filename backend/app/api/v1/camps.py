@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_role
 from app.models.user import User
 from app.models import Camp, CampEnrollment, Child, Parent, FamilyLink, Lead
-from app.models.camp_enrollment import CampEnrollmentStatus
+from app.models.camp_enrollment import CampEnrollmentStatus, PaymentStatus
 from app.utils.enums import UserRole, LeadStatus, LeadSource
 
 router = APIRouter(prefix="/camps", tags=["camps"])
@@ -44,8 +44,13 @@ class CampEnrollCreate(PydanticModel):
     parent_phone: Optional[str] = None
     parent_email: Optional[str] = None
     notes: Optional[str] = None
-    payment_amount: Optional[float] = None
+    # Payment
+    payment_status: Optional[str] = "PENDING"
+    payment_amount: Optional[float] = None   # total fee
+    amount_paid: Optional[float] = None      # amount collected so far
     payment_method: Optional[str] = None
+    payment_reference: Optional[str] = None
+    payment_date: Optional[date] = None
 
 
 def _camp_status(camp: Camp) -> str:
@@ -95,8 +100,12 @@ def _enrollment_out(e: CampEnrollment, lead_created: bool = False) -> dict:
         "parent_email": e.parent_email,
         "notes": e.notes,
         "status": e.status,
+        "payment_status": e.payment_status,
         "payment_amount": float(e.payment_amount) if e.payment_amount is not None else None,
+        "amount_paid": float(e.amount_paid) if e.amount_paid is not None else None,
         "payment_method": e.payment_method,
+        "payment_reference": e.payment_reference,
+        "payment_date": str(e.payment_date) if e.payment_date else None,
         "lead_created": lead_created,
         "created_at": e.created_at.isoformat() if e.created_at else None,
     }
@@ -334,8 +343,12 @@ def enroll_in_camp(
         parent_email=data.parent_email if not data.is_existing_student else None,
         notes=data.notes,
         status=CampEnrollmentStatus.ENROLLED,
+        payment_status=PaymentStatus(data.payment_status) if data.payment_status else PaymentStatus.PENDING,
         payment_amount=data.payment_amount,
+        amount_paid=data.amount_paid,
         payment_method=data.payment_method,
+        payment_reference=data.payment_reference,
+        payment_date=data.payment_date,
         is_archived=False,
         created_by_id=current_user.id,
         updated_by_id=current_user.id,
