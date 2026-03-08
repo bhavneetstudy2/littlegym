@@ -25,6 +25,8 @@ from app.models.progression_level import ProgressionLevel
 from app.models.weekly_progress import WeeklyProgress
 from app.models.child_trainer_notes import ChildTrainerNotes
 from app.models.role_permission import RolePermission
+from app.models.camp import Camp
+from app.models.camp_enrollment import CampEnrollment
 
 __all__ = [
     "Base",
@@ -55,4 +57,6 @@ __all__ = [
     "WeeklyProgress",
     "ChildTrainerNotes",
     "RolePermission",
+    "Camp",
+    "CampEnrollment",
 ]

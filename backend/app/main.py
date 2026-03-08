@@ -38,7 +38,7 @@ app.add_middleware(
 )
 
 # Include API routers
-from app.api.v1 import auth, centers, leads, intro_visits, enrollments, attendance, curriculum, report_cards, csv_import, weekly_progress, settings
+from app.api.v1 import auth, centers, leads, intro_visits, enrollments, attendance, curriculum, report_cards, csv_import, weekly_progress, settings, camps
 from app.api.v1.mdm import class_types
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
@@ -53,6 +53,7 @@ app.include_router(report_cards.router, prefix="/api/v1")
 app.include_router(csv_import.router, prefix="/api/v1")
 app.include_router(weekly_progress.router, prefix="/api/v1")
 app.include_router(settings.router, prefix="/api/v1")
+app.include_router(camps.router, prefix="/api/v1")
 
 
 def _seed_gymnastics_curriculum(engine):
@@ -216,6 +217,37 @@ def _seed_trainer_users(engine):
         db.commit()
 
 
+def _seed_spring_camp(engine):
+    """Idempotent seed: create Spring Camp for all active centers."""
+    from sqlalchemy.orm import Session
+    from datetime import date
+    from app.models import Camp, Center
+
+    CAMP_NAME = "Spring Camp"
+    START_DATE = date(2026, 3, 9)
+    END_DATE = date(2026, 3, 30)  # 3 weeks
+
+    with Session(engine) as db:
+        centers = db.query(Center).all()
+        for center in centers:
+            existing = db.query(Camp).filter(
+                Camp.center_id == center.id,
+                Camp.name == CAMP_NAME,
+                Camp.is_archived == False,
+            ).first()
+            if not existing:
+                db.add(Camp(
+                    center_id=center.id,
+                    name=CAMP_NAME,
+                    description="Spring Camp 2026 — 3 weeks of fun and gymnastics!",
+                    start_date=START_DATE,
+                    end_date=END_DATE,
+                    active=True,
+                    is_archived=False,
+                ))
+        db.commit()
+
+
 @app.on_event("startup")
 async def run_schema_migrations():
     """Run any schema migrations that weren't in initial setup."""
@@ -254,6 +286,12 @@ async def run_schema_migrations():
         logger.info("Seed: trainer users ensured")
     except Exception as e:
         logger.warning(f"Seed (trainers) warning: {e}")
+
+    try:
+        _seed_spring_camp(engine)
+        logger.info("Seed: Spring Camp ensured")
+    except Exception as e:
+        logger.warning(f"Seed (spring camp) warning: {e}")
 
 
 @app.exception_handler(Exception)
