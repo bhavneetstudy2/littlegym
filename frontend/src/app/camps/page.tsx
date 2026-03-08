@@ -208,8 +208,8 @@ function EnrollModal({ camp, onClose, onEnrolled, centerParam, centerId }: {
     }
     setSearching(true);
     api.get<StudentOption[]>(
-      `/api/v1/enrollments/students?center_id=${centerId}&search=${encodeURIComponent(studentSearch)}&limit=20`
-    ).then(d => setStudentOptions(d)).catch(() => setStudentOptions([])).finally(() => setSearching(false));
+      `/api/v1/camps/children-search?center_id=${centerId}&search=${encodeURIComponent(studentSearch)}&limit=20`
+    ).then(setStudentOptions).catch(() => setStudentOptions([])).finally(() => setSearching(false));
   }, [isExisting, studentSearch, centerId]);
 
   const submit = async () => {

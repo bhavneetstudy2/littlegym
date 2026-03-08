@@ -1,6 +1,7 @@
 from typing import Optional, List
 from datetime import date
 from fastapi import APIRouter, Depends, Query, HTTPException
+from sqlalchemy import text
 from sqlalchemy.orm import Session, joinedload
 from pydantic import BaseModel as PydanticModel
 
@@ -10,6 +11,7 @@ from app.models.user import User
 from app.models import Camp, CampEnrollment, Child, Parent, FamilyLink, Lead
 from app.models.camp_enrollment import CampEnrollmentStatus, PaymentStatus
 from app.utils.enums import UserRole, LeadStatus, LeadSource
+from app.services.lead_service import LeadService
 
 router = APIRouter(prefix="/camps", tags=["camps"])
 
@@ -109,6 +111,66 @@ def _enrollment_out(e: CampEnrollment, lead_created: bool = False) -> dict:
         "lead_created": lead_created,
         "created_at": e.created_at.isoformat() if e.created_at else None,
     }
+
+
+# ── Children search (for enroll modal) ──────────────────────────────────────
+
+@router.get("/children-search")
+def search_children(
+    search: str = Query(..., min_length=2),
+    center_id: Optional[int] = Query(None),
+    limit: int = Query(20, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Search all children by name (for camp enrollment). Returns any child, not just enrolled ones."""
+    if current_user.role == UserRole.SUPER_ADMIN:
+        effective_center_id = center_id
+    else:
+        effective_center_id = current_user.center_id
+
+    if not effective_center_id:
+        raise HTTPException(status_code=400, detail="center_id required")
+
+    rows = db.execute(text("""
+        SELECT
+            c.id AS child_id,
+            c.first_name,
+            c.last_name,
+            c.enquiry_id,
+            b.name AS batch_name
+        FROM children c
+        LEFT JOIN enrollments e ON e.child_id = c.id
+            AND e.status = 'ACTIVE'
+            AND e.is_archived = false
+            AND e.center_id = :cid
+        LEFT JOIN batches b ON e.batch_id = b.id
+        WHERE c.center_id = :cid
+          AND c.is_archived = false
+          AND (
+              c.first_name ILIKE :q
+              OR c.last_name ILIKE :q
+              OR CONCAT(c.first_name, ' ', c.last_name) ILIKE :q
+              OR c.enquiry_id ILIKE :q
+          )
+        ORDER BY c.first_name, c.last_name
+        LIMIT :lim
+    """), {"cid": effective_center_id, "q": f"%{search.strip()}%", "lim": limit}).fetchall()
+
+    seen = set()
+    result = []
+    for r in rows:
+        if r.child_id not in seen:
+            seen.add(r.child_id)
+            name = " ".join(filter(None, [r.first_name, r.last_name]))
+            result.append({
+                "child_id": r.child_id,
+                "child_name": name,
+                "enrollment_id": None,
+                "batch_name": r.batch_name,
+                "enquiry_id": r.enquiry_id,
+            })
+    return result
 
 
 # ── Camp CRUD ───────────────────────────────────────────────────────────────
@@ -281,8 +343,10 @@ def enroll_in_camp(
         first_name = name_parts[0]
         last_name = name_parts[1] if len(name_parts) > 1 else None
 
+        enquiry_id = LeadService._generate_next_enquiry_id(db)
         child = Child(
             center_id=effective_center_id,
+            enquiry_id=enquiry_id,
             first_name=first_name,
             last_name=last_name,
             dob=data.child_dob,
@@ -322,7 +386,7 @@ def enroll_in_camp(
             center_id=effective_center_id,
             child_id=child.id,
             status=LeadStatus.ENQUIRY_RECEIVED,
-            source=LeadSource.OTHER,
+            source=LeadSource.CAMP,
             discovery_notes=f"Enrolled in {camp.name} camp ({camp.start_date} – {camp.end_date})",
             is_archived=False,
             created_by_id=current_user.id,

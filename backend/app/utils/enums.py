@@ -37,6 +37,7 @@ class LeadSource(str, Enum):
     INSTAGRAM = "INSTAGRAM"
     FACEBOOK = "FACEBOOK"
     GOOGLE = "GOOGLE"
+    CAMP = "CAMP"
     OTHER = "OTHER"
 
 

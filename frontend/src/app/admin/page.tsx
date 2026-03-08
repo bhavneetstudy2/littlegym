@@ -38,6 +38,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showCenterModal, setShowCenterModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -84,6 +85,18 @@ export default function AdminPage() {
       console.error('Failed to fetch centers:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeactivate = async (user: User) => {
+    const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    const label = newStatus === 'INACTIVE' ? 'deactivate' : 'reactivate';
+    if (!confirm(`Are you sure you want to ${label} ${user.name}?`)) return;
+    try {
+      await api.patch(`/api/v1/users/${user.id}/status`, { status: newStatus });
+      fetchUsers();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update user status');
     }
   };
 
@@ -198,6 +211,9 @@ export default function AdminPage() {
                       <tr key={user.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                          {user.phone && (
+                            <div className="text-xs text-gray-400">{user.phone}</div>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {user.email}
@@ -219,12 +235,20 @@ export default function AdminPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button className="text-blue-600 hover:text-blue-900 mr-3">
+                          <button
+                            onClick={() => setEditingUser(user)}
+                            className="text-blue-600 hover:text-blue-900 mr-3"
+                          >
                             Edit
                           </button>
-                          <button className="text-red-600 hover:text-red-900">
-                            Deactivate
-                          </button>
+                          {user.id !== currentUser.id && (
+                            <button
+                              onClick={() => handleDeactivate(user)}
+                              className={user.status === 'ACTIVE' ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}
+                            >
+                              {user.status === 'ACTIVE' ? 'Deactivate' : 'Reactivate'}
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -321,9 +345,22 @@ export default function AdminPage() {
             setShowUserModal(false);
             fetchUsers();
           }}
-          centers={centers}
           isSuperAdmin={isSuperAdmin}
           currentCenterId={currentUser.center_id}
+        />
+      )}
+
+      {/* Edit User Modal */}
+      {editingUser && (
+        <EditUserModal
+          user={editingUser}
+          onClose={() => setEditingUser(null)}
+          onSuccess={() => {
+            setEditingUser(null);
+            fetchUsers();
+          }}
+          isSuperAdmin={isSuperAdmin}
+          currentUserId={currentUser.id}
         />
       )}
 
@@ -374,7 +411,6 @@ function PermissionsTab({ isSuperAdmin, currentUser }: { isSuperAdmin: boolean; 
       const data = await api.get<PermissionsConfig>(`/api/v1/settings/permissions${params}`);
       setConfig(data);
 
-      // Initialize editable state from fetched data
       const perms: Record<string, Record<string, boolean>> = {};
       for (const role of data.roles) {
         perms[role.role] = { ...role.permissions };
@@ -483,7 +519,6 @@ function PermissionsTab({ isSuperAdmin, currentUser }: { isSuperAdmin: boolean; 
               </tr>
             </thead>
             <tbody>
-              {/* Module Permissions */}
               <tr>
                 <td colSpan={roles.length + 1} className="px-6 py-3 bg-blue-50 border-b border-blue-100">
                   <span className="text-sm font-bold text-blue-700">Module Access</span>
@@ -514,7 +549,6 @@ function PermissionsTab({ isSuperAdmin, currentUser }: { isSuperAdmin: boolean; 
                 </tr>
               ))}
 
-              {/* Action Permissions */}
               <tr>
                 <td colSpan={roles.length + 1} className="px-6 py-3 bg-purple-50 border-b border-purple-100">
                   <span className="text-sm font-bold text-purple-700">Action Permissions</span>
@@ -557,26 +591,31 @@ function PermissionsTab({ isSuperAdmin, currentUser }: { isSuperAdmin: boolean; 
 function AddUserModal({
   onClose,
   onSuccess,
-  centers,
   isSuperAdmin,
   currentCenterId,
 }: {
   onClose: () => void;
   onSuccess: () => void;
-  centers: Center[];
   isSuperAdmin: boolean;
-  currentCenterId: number | null;
+  currentCenterId: number | null | undefined;
 }) {
+  const [centers, setCenters] = useState<Center[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     phone: '',
     role: 'TRAINER',
-    center_id: currentCenterId || '',
+    center_id: currentCenterId ? String(currentCenterId) : '',
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      api.get<Center[]>('/api/v1/centers').then(setCenters).catch(console.error);
+    }
+  }, [isSuperAdmin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -588,7 +627,7 @@ function AddUserModal({
         name: formData.name,
         email: formData.email,
         password: formData.password,
-        phone: formData.phone,
+        phone: formData.phone || undefined,
         role: formData.role,
         center_id: formData.role === 'SUPER_ADMIN' ? null : Number(formData.center_id),
       });
@@ -657,7 +696,7 @@ function AddUserModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               {isSuperAdmin && <option value="SUPER_ADMIN">Super Admin</option>}
-              <option value="CENTER_ADMIN">Center Admin</option>
+              {isSuperAdmin && <option value="CENTER_ADMIN">Center Admin</option>}
               <option value="CENTER_MANAGER">Center Manager</option>
               <option value="TRAINER">Trainer</option>
               <option value="COUNSELOR">Counselor</option>
@@ -667,19 +706,28 @@ function AddUserModal({
           {formData.role !== 'SUPER_ADMIN' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Center *</label>
-              <select
-                required
-                value={formData.center_id}
-                onChange={(e) => setFormData({ ...formData, center_id: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">-- Select center --</option>
-                {centers.map((center) => (
-                  <option key={center.id} value={center.id}>
-                    {center.name}
-                  </option>
-                ))}
-              </select>
+              {isSuperAdmin ? (
+                <select
+                  required
+                  value={formData.center_id}
+                  onChange={(e) => setFormData({ ...formData, center_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- Select center --</option>
+                  {centers.map((center) => (
+                    <option key={center.id} value={center.id}>
+                      {center.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  disabled
+                  value="Your Center (auto-assigned)"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
+                />
+              )}
             </div>
           )}
 
@@ -690,6 +738,144 @@ function AddUserModal({
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50"
             >
               {submitting ? 'Creating...' : 'Create User'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-medium"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Edit User Modal ─────────────────────────────────────────────────────────
+
+function EditUserModal({
+  user,
+  onClose,
+  onSuccess,
+  isSuperAdmin,
+  currentUserId,
+}: {
+  user: User;
+  onClose: () => void;
+  onSuccess: () => void;
+  isSuperAdmin: boolean;
+  currentUserId: number;
+}) {
+  const [formData, setFormData] = useState({
+    name: user.name,
+    email: user.email,
+    phone: user.phone || '',
+    role: user.role,
+    password: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError('');
+
+    try {
+      const payload: Record<string, string> = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        role: formData.role,
+      };
+      if (formData.password) {
+        payload.password = formData.password;
+      }
+      await api.patch(`/api/v1/users/${user.id}`, payload);
+      onSuccess();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update user');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-md w-full p-6">
+        <h2 className="text-2xl font-bold mb-4">Edit User</h2>
+        {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">{error}</div>}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+            <input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+            <input
+              type="email"
+              required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+            <select
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value as User['role'] })}
+              disabled={user.id === currentUserId}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+            >
+              {isSuperAdmin && <option value="SUPER_ADMIN">Super Admin</option>}
+              {isSuperAdmin && <option value="CENTER_ADMIN">Center Admin</option>}
+              <option value="CENTER_MANAGER">Center Manager</option>
+              <option value="TRAINER">Trainer</option>
+              <option value="COUNSELOR">Counselor</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              New Password <span className="text-gray-400 font-normal">(leave blank to keep current)</span>
+            </label>
+            <input
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              placeholder="Enter new password..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50"
+            >
+              {submitting ? 'Saving...' : 'Save Changes'}
             </button>
             <button
               type="button"

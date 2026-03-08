@@ -38,10 +38,11 @@ app.add_middleware(
 )
 
 # Include API routers
-from app.api.v1 import auth, centers, leads, intro_visits, enrollments, attendance, curriculum, report_cards, csv_import, weekly_progress, settings, camps
+from app.api.v1 import auth, centers, leads, intro_visits, enrollments, attendance, curriculum, report_cards, csv_import, weekly_progress, settings, camps, users
 from app.api.v1.mdm import class_types
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(users.router, prefix="/api/v1")
 app.include_router(centers.router, prefix="/api/v1")
 app.include_router(leads.router, prefix="/api/v1")
 app.include_router(intro_visits.router, prefix="/api/v1")

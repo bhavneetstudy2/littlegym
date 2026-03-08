@@ -551,7 +551,7 @@ export default function EnhancedLeadsPage() {
                         >
                           View
                         </button>
-                        {isSuperAdmin && (
+                        {(isSuperAdmin || user?.role === 'CENTER_ADMIN') && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -559,7 +559,7 @@ export default function EnhancedLeadsPage() {
                               setShowDeleteConfirm(true);
                             }}
                             className="px-3 py-1 text-xs font-medium rounded bg-red-100 text-red-700 hover:bg-red-200 transition"
-                            title="Delete Lead (Super Admin)"
+                            title="Delete Lead"
                           >
                             Delete
                           </button>

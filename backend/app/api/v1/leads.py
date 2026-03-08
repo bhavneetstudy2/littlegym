@@ -404,12 +404,16 @@ def get_lead_details(
 def delete_lead(
     lead_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_super_admin)
+    current_user: User = Depends(require_role(UserRole.SUPER_ADMIN, UserRole.CENTER_ADMIN))
 ):
-    """Delete a lead permanently. Super Admin only."""
+    """Delete a lead permanently. Super Admin and Center Admin only."""
     lead = LeadService.get_lead_by_id(db=db, lead_id=lead_id)
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
+
+    # CENTER_ADMIN can only delete leads from their own center
+    if current_user.role == UserRole.CENTER_ADMIN and lead.center_id != current_user.center_id:
+        raise HTTPException(status_code=403, detail="Access denied")
 
     try:
         LeadService.delete_lead(db=db, lead_id=lead_id)
