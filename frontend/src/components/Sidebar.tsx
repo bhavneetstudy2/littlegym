@@ -67,7 +67,7 @@ export default function Sidebar({ onClose, collapsed = false, onToggleCollapse }
     { name: 'Enrollments', href: '/enrollments', icon: ClipboardCheck, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: 'module:enrollments' },
     { name: 'Attendance', href: '/attendance', icon: CalendarCheck, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: 'module:attendance' },
     { name: 'Progress', href: '/progress', icon: TrendingUp, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: 'module:progress' },
-    { name: 'Camps', href: '/camps', icon: Tent, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: null },
+    { name: 'Camps', href: '/camps', icon: Tent, roles: ['SUPER_ADMIN', 'CENTER_ADMIN', 'CENTER_MANAGER'], permissionKey: null },
     { name: 'Report Cards', href: '/report-cards', icon: FileText, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: 'module:report_cards' },
     { name: 'Renewals', href: '/renewals', icon: RefreshCw, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: 'module:renewals' },
     { name: 'Admin', href: '/admin', icon: Settings, roles: ['SUPER_ADMIN', 'CENTER_ADMIN'], permissionKey: null },
