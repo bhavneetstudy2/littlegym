@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useCenter } from '@/contexts/CenterContext';
-import { useAuth } from '@/contexts/AuthContext';
 import { Calendar, Plus, Users, X, ChevronRight, Tent } from 'lucide-react';
 
 interface Camp {
@@ -437,8 +436,14 @@ function EnrollModal({ camp, onClose, onEnrolled, centerParam, centerId }: {
 export default function CampsPage() {
   const { selectedCenter } = useCenter();
   const centerParam = selectedCenter ? `center_id=${selectedCenter.id}` : '';
-  const { user: currentUser } = useAuth();
-  const canManageCamps = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'CENTER_ADMIN';
+  const [userRole, setUserRole] = useState<string>('');
+  useEffect(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      setUserRole(u.role || '');
+    } catch { /* ignore */ }
+  }, []);
+  const canManageCamps = userRole === 'SUPER_ADMIN' || userRole === 'CENTER_ADMIN';
 
   const [camps, setCamps] = useState<Camp[]>([]);
   const [loading, setLoading] = useState(true);
