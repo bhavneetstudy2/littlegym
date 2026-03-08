@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useCenter } from '@/contexts/CenterContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Calendar, Plus, Users, X, ChevronRight, Tent } from 'lucide-react';
 
 interface Camp {
@@ -436,6 +437,8 @@ function EnrollModal({ camp, onClose, onEnrolled, centerParam, centerId }: {
 export default function CampsPage() {
   const { selectedCenter } = useCenter();
   const centerParam = selectedCenter ? `center_id=${selectedCenter.id}` : '';
+  const { user: currentUser } = useAuth();
+  const canManageCamps = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'CENTER_ADMIN';
 
   const [camps, setCamps] = useState<Camp[]>([]);
   const [loading, setLoading] = useState(true);
@@ -518,13 +521,15 @@ export default function CampsPage() {
             <p className="text-sm text-gray-500">Short-term camp programs</p>
           </div>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700"
-        >
-          <Plus className="w-4 h-4" />
-          Create Camp
-        </button>
+        {canManageCamps && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4" />
+            Create Camp
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4">

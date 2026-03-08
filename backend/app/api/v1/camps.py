@@ -203,7 +203,7 @@ def create_camp(
     center_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(
-        UserRole.CENTER_ADMIN, UserRole.CENTER_MANAGER, UserRole.SUPER_ADMIN
+        UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN
     )),
 ):
     if current_user.role == UserRole.SUPER_ADMIN:
@@ -242,7 +242,7 @@ def update_camp(
     data: CampUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(
-        UserRole.CENTER_ADMIN, UserRole.CENTER_MANAGER, UserRole.SUPER_ADMIN
+        UserRole.CENTER_ADMIN, UserRole.SUPER_ADMIN
     )),
 ):
     camp = db.query(Camp).filter(Camp.id == camp_id, Camp.is_archived == False).first()
