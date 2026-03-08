@@ -7,9 +7,9 @@ from pydantic import BaseModel as PydanticModel
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_role
 from app.models.user import User
-from app.models import Camp, CampEnrollment, Child
+from app.models import Camp, CampEnrollment, Child, Parent, FamilyLink, Lead
 from app.models.camp_enrollment import CampEnrollmentStatus
-from app.utils.enums import UserRole
+from app.utils.enums import UserRole, LeadStatus, LeadSource
 
 router = APIRouter(prefix="/camps", tags=["camps"])
 
@@ -78,10 +78,11 @@ def _camp_out(camp: Camp, db: Session) -> dict:
     }
 
 
-def _enrollment_out(e: CampEnrollment) -> dict:
+def _enrollment_out(e: CampEnrollment, lead_created: bool = False) -> dict:
     child_name = e.child_name
-    if e.is_existing_student and e.child:
-        child_name = f"{e.child.first_name or ''} {e.child.last_name or ''}".strip()
+    # For both existing and new students (new students now have child_id set)
+    if e.child:
+        child_name = f"{e.child.first_name or ''} {e.child.last_name or ''}".strip() or e.child_name
     return {
         "id": e.id,
         "camp_id": e.camp_id,
@@ -89,13 +90,14 @@ def _enrollment_out(e: CampEnrollment) -> dict:
         "child_id": e.child_id,
         "child_name": child_name,
         "child_dob": str(e.child_dob) if e.child_dob else None,
-        "parent_name": e.parent_name if not e.is_existing_student else None,
-        "parent_phone": e.parent_phone if not e.is_existing_student else None,
-        "parent_email": e.parent_email if not e.is_existing_student else None,
+        "parent_name": e.parent_name,
+        "parent_phone": e.parent_phone,
+        "parent_email": e.parent_email,
         "notes": e.notes,
         "status": e.status,
         "payment_amount": float(e.payment_amount) if e.payment_amount is not None else None,
         "payment_method": e.payment_method,
+        "lead_created": lead_created,
         "created_at": e.created_at.isoformat() if e.created_at else None,
     }
 
@@ -247,27 +249,84 @@ def enroll_in_camp(
     if not camp:
         raise HTTPException(status_code=404, detail="Camp not found")
 
+    new_child_id: Optional[int] = None
+
     if data.is_existing_student:
         if not data.child_id:
             raise HTTPException(status_code=400, detail="child_id required for existing student")
         # Check not already enrolled
-        existing = db.query(CampEnrollment).filter(
+        already = db.query(CampEnrollment).filter(
             CampEnrollment.camp_id == camp_id,
             CampEnrollment.child_id == data.child_id,
             CampEnrollment.status == CampEnrollmentStatus.ENROLLED,
             CampEnrollment.is_archived == False,
         ).first()
-        if existing:
+        if already:
             raise HTTPException(status_code=400, detail="Student already enrolled in this camp")
     else:
         if not data.child_name:
             raise HTTPException(status_code=400, detail="child_name required for new student")
 
+        # ── Auto-create Child + Parent + Lead for new student ──────────────
+        name_parts = data.child_name.strip().split(" ", 1)
+        first_name = name_parts[0]
+        last_name = name_parts[1] if len(name_parts) > 1 else None
+
+        child = Child(
+            center_id=effective_center_id,
+            first_name=first_name,
+            last_name=last_name,
+            dob=data.child_dob,
+            is_archived=False,
+            created_by_id=current_user.id,
+            updated_by_id=current_user.id,
+        )
+        db.add(child)
+        db.flush()  # get child.id
+
+        if data.parent_name or data.parent_phone:
+            parent = Parent(
+                center_id=effective_center_id,
+                name=data.parent_name or "Unknown",
+                phone=data.parent_phone or "",
+                email=data.parent_email,
+                is_archived=False,
+                created_by_id=current_user.id,
+                updated_by_id=current_user.id,
+            )
+            db.add(parent)
+            db.flush()
+
+            family_link = FamilyLink(
+                center_id=effective_center_id,
+                child_id=child.id,
+                parent_id=parent.id,
+                relationship_type="parent",
+                is_primary_contact=True,
+                is_archived=False,
+                created_by_id=current_user.id,
+                updated_by_id=current_user.id,
+            )
+            db.add(family_link)
+
+        lead = Lead(
+            center_id=effective_center_id,
+            child_id=child.id,
+            status=LeadStatus.ENQUIRY_RECEIVED,
+            source=LeadSource.OTHER,
+            discovery_notes=f"Enrolled in {camp.name} camp ({camp.start_date} – {camp.end_date})",
+            is_archived=False,
+            created_by_id=current_user.id,
+            updated_by_id=current_user.id,
+        )
+        db.add(lead)
+        new_child_id = child.id
+
     enrollment = CampEnrollment(
         center_id=effective_center_id,
         camp_id=camp_id,
         is_existing_student=data.is_existing_student,
-        child_id=data.child_id if data.is_existing_student else None,
+        child_id=data.child_id if data.is_existing_student else new_child_id,
         child_name=data.child_name if not data.is_existing_student else None,
         child_dob=data.child_dob,
         parent_name=data.parent_name if not data.is_existing_student else None,
@@ -284,11 +343,9 @@ def enroll_in_camp(
     db.add(enrollment)
     db.commit()
     db.refresh(enrollment)
-    # reload child relationship
     if enrollment.child_id:
-        db.refresh(enrollment)
         enrollment.child  # trigger load
-    return _enrollment_out(enrollment)
+    return _enrollment_out(enrollment, lead_created=not data.is_existing_student)
 
 
 @router.patch("/{camp_id}/enrollments/{enrollment_id}/cancel")

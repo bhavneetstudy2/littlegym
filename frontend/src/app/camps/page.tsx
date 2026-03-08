@@ -33,6 +33,7 @@ interface CampEnrollment {
   status: string;
   payment_amount: number | null;
   payment_method: string | null;
+  lead_created?: boolean;
   created_at: string | null;
 }
 
@@ -394,6 +395,8 @@ export default function CampsPage() {
   const [loadingEnrollments, setLoadingEnrollments] = useState(false);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 4000); };
 
   const loadCamps = useCallback(async () => {
     if (!selectedCenter) return;
@@ -635,8 +638,20 @@ export default function CampsPage() {
             setEnrollments(prev => [...prev, enrollment]);
             setCamps(prev => prev.map(c => c.id === selectedCamp.id ? { ...c, enrolled_count: c.enrolled_count + 1 } : c));
             setShowEnrollModal(false);
+            if (enrollment.lead_created) {
+              showToast(`${enrollment.child_name} enrolled + added to Leads as enquiry`);
+            } else {
+              showToast(`${enrollment.child_name} enrolled in ${selectedCamp.name}`);
+            }
           }}
         />
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-3 rounded-full shadow-lg z-50 text-sm whitespace-nowrap flex items-center gap-2">
+          <span>{toast}</span>
+        </div>
       )}
     </div>
   );
