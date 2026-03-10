@@ -46,10 +46,25 @@ class CampEnrollCreate(PydanticModel):
     parent_phone: Optional[str] = None
     parent_email: Optional[str] = None
     notes: Optional[str] = None
+    # Enrollment period (optional – for tracking which week)
+    enrollment_start_date: Optional[date] = None
+    enrollment_end_date: Optional[date] = None
     # Payment
     payment_status: Optional[str] = "PENDING"
     payment_amount: Optional[float] = None   # total fee
     amount_paid: Optional[float] = None      # amount collected so far
+    payment_method: Optional[str] = None
+    payment_reference: Optional[str] = None
+    payment_date: Optional[date] = None
+
+
+class CampRenewCreate(PydanticModel):
+    enrollment_start_date: Optional[date] = None
+    enrollment_end_date: Optional[date] = None
+    notes: Optional[str] = None
+    payment_status: Optional[str] = "PENDING"
+    payment_amount: Optional[float] = None
+    amount_paid: Optional[float] = None
     payment_method: Optional[str] = None
     payment_reference: Optional[str] = None
     payment_date: Optional[date] = None
@@ -108,6 +123,8 @@ def _enrollment_out(e: CampEnrollment, lead_created: bool = False) -> dict:
         "payment_method": e.payment_method,
         "payment_reference": e.payment_reference,
         "payment_date": str(e.payment_date) if e.payment_date else None,
+        "enrollment_start_date": str(e.enrollment_start_date) if e.enrollment_start_date else None,
+        "enrollment_end_date": str(e.enrollment_end_date) if e.enrollment_end_date else None,
         "lead_created": lead_created,
         "created_at": e.created_at.isoformat() if e.created_at else None,
     }
@@ -413,6 +430,8 @@ def enroll_in_camp(
         payment_method=data.payment_method,
         payment_reference=data.payment_reference,
         payment_date=data.payment_date,
+        enrollment_start_date=data.enrollment_start_date,
+        enrollment_end_date=data.enrollment_end_date,
         is_archived=False,
         created_by_id=current_user.id,
         updated_by_id=current_user.id,
@@ -423,6 +442,57 @@ def enroll_in_camp(
     if enrollment.child_id:
         enrollment.child  # trigger load
     return _enrollment_out(enrollment, lead_created=not data.is_existing_student)
+
+
+@router.post("/{camp_id}/enrollments/{enrollment_id}/renew")
+def renew_camp_enrollment(
+    camp_id: int,
+    enrollment_id: int,
+    data: CampRenewCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(
+        UserRole.CENTER_ADMIN, UserRole.CENTER_MANAGER, UserRole.SUPER_ADMIN
+    )),
+):
+    """Create a renewal enrollment for the same student in the same camp (e.g. next week)."""
+    original = db.query(CampEnrollment).options(joinedload(CampEnrollment.child)).filter(
+        CampEnrollment.id == enrollment_id,
+        CampEnrollment.camp_id == camp_id,
+        CampEnrollment.is_archived == False,
+    ).first()
+    if not original:
+        raise HTTPException(status_code=404, detail="Enrollment not found")
+
+    renewal = CampEnrollment(
+        center_id=original.center_id,
+        camp_id=camp_id,
+        is_existing_student=True,
+        child_id=original.child_id,
+        child_name=original.child_name,
+        child_dob=original.child_dob,
+        parent_name=original.parent_name,
+        parent_phone=original.parent_phone,
+        parent_email=original.parent_email,
+        notes=data.notes,
+        enrollment_start_date=data.enrollment_start_date,
+        enrollment_end_date=data.enrollment_end_date,
+        status=CampEnrollmentStatus.ENROLLED,
+        payment_status=PaymentStatus(data.payment_status) if data.payment_status else PaymentStatus.PENDING,
+        payment_amount=data.payment_amount,
+        amount_paid=data.amount_paid,
+        payment_method=data.payment_method,
+        payment_reference=data.payment_reference,
+        payment_date=data.payment_date,
+        is_archived=False,
+        created_by_id=current_user.id,
+        updated_by_id=current_user.id,
+    )
+    db.add(renewal)
+    db.commit()
+    db.refresh(renewal)
+    if renewal.child_id:
+        renewal.child  # trigger load
+    return _enrollment_out(renewal)
 
 
 @router.patch("/{camp_id}/enrollments/{enrollment_id}/cancel")

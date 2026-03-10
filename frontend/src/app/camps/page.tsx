@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useCenter } from '@/contexts/CenterContext';
-import { Calendar, Plus, Users, X, ChevronRight, Tent } from 'lucide-react';
+import { Calendar, Plus, Users, X, ChevronRight, Tent, RefreshCw } from 'lucide-react';
 
 interface Camp {
   id: number;
@@ -37,6 +37,8 @@ interface CampEnrollment {
   payment_method: string | null;
   payment_reference: string | null;
   payment_date: string | null;
+  enrollment_start_date: string | null;
+  enrollment_end_date: string | null;
   lead_created?: boolean;
   created_at: string | null;
 }
@@ -189,6 +191,8 @@ function EnrollModal({ camp, onClose, onEnrolled, centerParam, centerId }: {
     parent_phone: '',
     parent_email: '',
     notes: '',
+    enrollment_start_date: '',
+    enrollment_end_date: '',
     payment_status: 'PENDING',
     payment_amount: '',
     amount_paid: '',
@@ -227,8 +231,12 @@ function EnrollModal({ camp, onClose, onEnrolled, centerParam, centerId }: {
         payment_reference: form.payment_reference || null,
         payment_date: form.payment_date || null,
       };
+      const periodFields = {
+        enrollment_start_date: form.enrollment_start_date || null,
+        enrollment_end_date: form.enrollment_end_date || null,
+      };
       const payload = isExisting
-        ? { is_existing_student: true, child_id: selectedStudent!.child_id, notes: form.notes || null, ...paymentFields }
+        ? { is_existing_student: true, child_id: selectedStudent!.child_id, notes: form.notes || null, ...periodFields, ...paymentFields }
         : {
             is_existing_student: false,
             child_name: form.child_name,
@@ -237,6 +245,7 @@ function EnrollModal({ camp, onClose, onEnrolled, centerParam, centerId }: {
             parent_phone: form.parent_phone || null,
             parent_email: form.parent_email || null,
             notes: form.notes || null,
+            ...periodFields,
             ...paymentFields,
           };
 
@@ -350,6 +359,23 @@ function EnrollModal({ camp, onClose, onEnrolled, centerParam, centerId }: {
             </>
           )}
 
+          {/* Optional period */}
+          <div className="border-t border-gray-100 pt-4">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Enrollment Period <span className="font-normal normal-case text-gray-400">(optional – e.g. Week 1)</span></p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">From</label>
+                <input type="date" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  value={form.enrollment_start_date} onChange={e => setForm(f => ({ ...f, enrollment_start_date: e.target.value }))} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">To</label>
+                <input type="date" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  value={form.enrollment_end_date} onChange={e => setForm(f => ({ ...f, enrollment_end_date: e.target.value }))} />
+              </div>
+            </div>
+          </div>
+
           {/* Payment section */}
           <div className="border-t border-gray-100 pt-4">
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Payment</p>
@@ -431,6 +457,166 @@ function EnrollModal({ camp, onClose, onEnrolled, centerParam, centerId }: {
   );
 }
 
+// ── Renew Modal ──────────────────────────────────────────────────────────────
+
+function addDays(dateStr: string | null, days: number): string {
+  const base = dateStr ? new Date(dateStr) : new Date();
+  base.setDate(base.getDate() + days);
+  return base.toISOString().split('T')[0];
+}
+
+function RenewModal({ camp, enrollment, onClose, onRenewed }: {
+  camp: Camp;
+  enrollment: CampEnrollment;
+  onClose: () => void;
+  onRenewed: (e: CampEnrollment) => void;
+}) {
+  const nextStart = addDays(enrollment.enrollment_end_date, 1);
+  const nextEnd = addDays(enrollment.enrollment_end_date, 7);
+
+  const [form, setForm] = useState({
+    enrollment_start_date: nextStart,
+    enrollment_end_date: nextEnd,
+    notes: '',
+    payment_status: 'PENDING',
+    payment_amount: enrollment.payment_amount ? String(enrollment.payment_amount) : '',
+    amount_paid: '',
+    payment_method: enrollment.payment_method || '',
+    payment_reference: '',
+    payment_date: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const childName = enrollment.child_name || '—';
+
+  const submit = async () => {
+    setError('');
+    setSaving(true);
+    try {
+      const renewed = await api.post<CampEnrollment>(
+        `/api/v1/camps/${camp.id}/enrollments/${enrollment.id}/renew`,
+        {
+          enrollment_start_date: form.enrollment_start_date || null,
+          enrollment_end_date: form.enrollment_end_date || null,
+          notes: form.notes || null,
+          payment_status: form.payment_status,
+          payment_amount: form.payment_amount ? Number(form.payment_amount) : null,
+          amount_paid: form.amount_paid ? Number(form.amount_paid) : null,
+          payment_method: form.payment_method || null,
+          payment_reference: form.payment_reference || null,
+          payment_date: form.payment_date || null,
+        }
+      );
+      onRenewed(renewed);
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      setError(err?.message || 'Failed to renew');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-xl max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">Renew Enrollment</h2>
+            <p className="text-xs text-gray-500 mt-0.5">{childName} · {camp.name}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg"><X className="w-4 h-4" /></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1">Period Start</label>
+              <input type="date" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                value={form.enrollment_start_date} onChange={e => setForm(f => ({ ...f, enrollment_start_date: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1">Period End</label>
+              <input type="date" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                value={form.enrollment_end_date} onChange={e => setForm(f => ({ ...f, enrollment_end_date: e.target.value }))} />
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 pt-4">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Payment</p>
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                {(['PENDING', 'PARTIAL', 'PAID'] as const).map(s => (
+                  <button key={s} type="button"
+                    onClick={() => setForm(f => ({ ...f, payment_status: s }))}
+                    className={`py-2 rounded-xl text-xs font-semibold border transition ${
+                      form.payment_status === s
+                        ? s === 'PAID' ? 'bg-green-500 text-white border-green-500'
+                          : s === 'PARTIAL' ? 'bg-amber-500 text-white border-amber-500'
+                          : 'bg-gray-500 text-white border-gray-500'
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                    }`}>{s}</button>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Total Fee (₹)</label>
+                  <input type="number" min="0" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="0" value={form.payment_amount} onChange={e => setForm(f => ({ ...f, payment_amount: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Amount Paid (₹)</label>
+                  <input type="number" min="0" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="0" value={form.amount_paid} onChange={e => setForm(f => ({ ...f, amount_paid: e.target.value }))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Method</label>
+                  <select className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                    value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))}>
+                    <option value="">Select...</option>
+                    <option>CASH</option><option>UPI</option><option>CARD</option><option>BANK_TRANSFER</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Date</label>
+                  <input type="date" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    value={form.payment_date} onChange={e => setForm(f => ({ ...f, payment_date: e.target.value }))} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Reference / Transaction ID</label>
+                <input className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="UPI ref, cheque no, etc."
+                  value={form.payment_reference} onChange={e => setForm(f => ({ ...f, payment_reference: e.target.value }))} />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Notes</label>
+            <textarea className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
+              rows={2} placeholder="Any notes for this renewal..."
+              value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+          </div>
+        </div>
+
+        <div className="px-5 pb-5 flex gap-3 shrink-0 border-t border-gray-100 pt-4">
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 text-sm border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50">Cancel</button>
+          <button onClick={submit} disabled={saving} className="flex-1 px-4 py-2.5 text-sm bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-60 flex items-center justify-center gap-2">
+            <RefreshCw className="w-4 h-4" />
+            {saving ? 'Renewing...' : 'Renew'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default function CampsPage() {
@@ -454,6 +640,7 @@ export default function CampsPage() {
   const [loadingEnrollments, setLoadingEnrollments] = useState(false);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
+  const [renewingEnrollment, setRenewingEnrollment] = useState<CampEnrollment | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 4000); };
 
@@ -657,8 +844,14 @@ export default function CampsPage() {
                             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium shrink-0">New</span>
                           )}
                         </div>
+                        {(e.enrollment_start_date || e.enrollment_end_date) && (
+                          <p className="text-xs text-blue-600 font-medium mt-0.5">
+                            {e.enrollment_start_date ? fmtDate(e.enrollment_start_date) : '?'}
+                            {' – '}
+                            {e.enrollment_end_date ? fmtDate(e.enrollment_end_date) : '?'}
+                          </p>
+                        )}
                         <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400">
-                          {/* Payment status badge */}
                           <span className={`font-semibold ${
                             e.payment_status === 'PAID' ? 'text-green-600'
                             : e.payment_status === 'PARTIAL' ? 'text-amber-600'
@@ -673,6 +866,13 @@ export default function CampsPage() {
                         </div>
                         {e.parent_phone && <p className="text-xs text-gray-400 mt-0.5">{e.parent_phone}</p>}
                       </div>
+                      <button
+                        onClick={() => setRenewingEnrollment(e)}
+                        className="p-1.5 text-gray-300 hover:text-green-600 rounded-lg transition"
+                        title="Renew for next week"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      </button>
                       <button
                         onClick={() => cancelEnrollment(e)}
                         disabled={cancellingId === e.id}
@@ -717,6 +917,19 @@ export default function CampsPage() {
             } else {
               showToast(`${enrollment.child_name} enrolled in ${selectedCamp.name}`);
             }
+          }}
+        />
+      )}
+
+      {renewingEnrollment && selectedCamp && (
+        <RenewModal
+          camp={selectedCamp}
+          enrollment={renewingEnrollment}
+          onClose={() => setRenewingEnrollment(null)}
+          onRenewed={renewed => {
+            setEnrollments(prev => [...prev, renewed]);
+            setRenewingEnrollment(null);
+            showToast(`${renewed.child_name} renewed for ${renewed.enrollment_start_date ? fmtDate(renewed.enrollment_start_date) : 'next period'}`);
           }}
         />
       )}

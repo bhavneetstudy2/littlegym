@@ -52,5 +52,9 @@ class CampEnrollment(BaseModel, TenantMixin):
     payment_reference = Column(String(255), nullable=True)
     payment_date = Column(Date, nullable=True)
 
+    # Per-enrollment period (e.g. week 1 of a 3-week camp)
+    enrollment_start_date = Column(Date, nullable=True)
+    enrollment_end_date = Column(Date, nullable=True)
+
     camp = relationship("Camp", back_populates="enrollments")
     child = relationship("Child")

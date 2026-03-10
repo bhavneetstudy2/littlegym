@@ -276,6 +276,13 @@ async def run_schema_migrations():
             conn.execute(text(
                 "ALTER TABLE camp_enrollments ADD COLUMN IF NOT EXISTS payment_date DATE"
             ))
+            # Per-enrollment period columns for camp_enrollments
+            conn.execute(text(
+                "ALTER TABLE camp_enrollments ADD COLUMN IF NOT EXISTS enrollment_start_date DATE"
+            ))
+            conn.execute(text(
+                "ALTER TABLE camp_enrollments ADD COLUMN IF NOT EXISTS enrollment_end_date DATE"
+            ))
             # Add CAMP to leadsource enum if not already present
             conn.execute(text(
                 "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'CAMP' AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'leadsource')) THEN ALTER TYPE leadsource ADD VALUE 'CAMP'; END IF; END $$;"
