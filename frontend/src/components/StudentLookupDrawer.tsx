@@ -193,14 +193,19 @@ export default function StudentLookupDrawer() {
                           {result.child.first_name.charAt(0)}
                         </div>
                         <div className="min-w-0">
-                          <span className="font-medium text-gray-900">
-                            {result.child.first_name} {result.child.last_name || ''}
-                          </span>
-                          {result.child.enquiry_id && (
-                            <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                              {result.child.enquiry_id}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-medium text-gray-900">
+                              {result.child.first_name} {result.child.last_name || ''}
                             </span>
-                          )}
+                            {primaryParent && (
+                              <span className="text-sm text-gray-500">({primaryParent.name})</span>
+                            )}
+                            {result.child.enquiry_id && (
+                              <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                                {result.child.enquiry_id}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <span className={`px-2 py-0.5 rounded text-xs font-medium flex-shrink-0 ${
@@ -214,7 +219,7 @@ export default function StudentLookupDrawer() {
                     </div>
                     <div className="text-sm text-gray-500 mt-1 ml-10">
                       {primaryParent && (
-                        <span>{primaryParent.name} &middot; {primaryParent.phone}</span>
+                        <span>{primaryParent.phone}</span>
                       )}
                       {result.batch && (
                         <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">

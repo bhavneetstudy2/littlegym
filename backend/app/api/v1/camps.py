@@ -155,13 +155,20 @@ def search_children(
             c.first_name,
             c.last_name,
             c.enquiry_id,
-            b.name AS batch_name
+            b.name AS batch_name,
+            p.name AS parent_name,
+            p.phone AS parent_phone
         FROM children c
         LEFT JOIN enrollments e ON e.child_id = c.id
             AND e.status = 'ACTIVE'
             AND e.is_archived = false
             AND e.center_id = :cid
         LEFT JOIN batches b ON e.batch_id = b.id
+        LEFT JOIN family_links fl ON fl.child_id = c.id
+            AND fl.is_primary_contact = true
+            AND fl.is_archived = false
+        LEFT JOIN parents p ON p.id = fl.parent_id
+            AND p.is_archived = false
         WHERE c.center_id = :cid
           AND c.is_archived = false
           AND (
@@ -169,6 +176,8 @@ def search_children(
               OR c.last_name ILIKE :q
               OR CONCAT(c.first_name, ' ', c.last_name) ILIKE :q
               OR c.enquiry_id ILIKE :q
+              OR p.name ILIKE :q
+              OR p.phone ILIKE :q
           )
         ORDER BY c.first_name, c.last_name
         LIMIT :lim
@@ -186,6 +195,8 @@ def search_children(
                 "enrollment_id": None,
                 "batch_name": r.batch_name,
                 "enquiry_id": r.enquiry_id,
+                "parent_name": r.parent_name,
+                "parent_phone": r.parent_phone,
             })
     return result
 

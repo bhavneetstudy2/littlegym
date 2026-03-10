@@ -48,6 +48,8 @@ interface StudentOption {
   child_name: string;
   enrollment_id: number;
   batch_name: string | null;
+  parent_name: string | null;
+  parent_phone: string | null;
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -304,23 +306,30 @@ function EnrollModal({ camp, onClose, onEnrolled, centerParam, centerId }: {
                 />
                 {searching && <p className="text-xs text-gray-400 mt-1">Searching...</p>}
                 {studentOptions.length > 0 && !selectedStudent && (
-                  <div className="mt-1 border border-gray-200 rounded-xl overflow-hidden shadow-sm max-h-40 overflow-y-auto">
+                  <div className="mt-1 border border-gray-200 rounded-xl overflow-hidden shadow-sm max-h-48 overflow-y-auto">
                     {studentOptions.map(s => (
                       <button
                         key={s.child_id}
                         onClick={() => { setSelectedStudent(s); setStudentSearch(s.child_name); setStudentOptions([]); }}
                         className="w-full text-left px-3 py-2.5 text-sm hover:bg-blue-50 border-b border-gray-100 last:border-0"
                       >
-                        <span className="font-medium text-gray-900">{s.child_name}</span>
-                        {s.batch_name && <span className="ml-2 text-xs text-gray-400">{s.batch_name}</span>}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-medium text-gray-900">{s.child_name}</span>
+                          {s.parent_name && <span className="text-gray-500">({s.parent_name})</span>}
+                          {s.batch_name && <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{s.batch_name}</span>}
+                        </div>
+                        {s.parent_phone && <p className="text-xs text-gray-400 mt-0.5">{s.parent_phone}</p>}
                       </button>
                     ))}
                   </div>
                 )}
                 {selectedStudent && (
                   <div className="mt-2 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-                    <span className="text-sm font-medium text-blue-800">{selectedStudent.child_name}</span>
-                    <button onClick={() => { setSelectedStudent(null); setStudentSearch(''); }} className="ml-auto text-blue-400 hover:text-blue-700"><X className="w-3.5 h-3.5" /></button>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium text-blue-800">{selectedStudent.child_name}</span>
+                      {selectedStudent.parent_name && <span className="text-sm text-blue-600"> ({selectedStudent.parent_name})</span>}
+                    </div>
+                    <button onClick={() => { setSelectedStudent(null); setStudentSearch(''); }} className="text-blue-400 hover:text-blue-700"><X className="w-3.5 h-3.5" /></button>
                   </div>
                 )}
               </div>
