@@ -34,7 +34,7 @@ interface SearchResult {
 type DrawerView = 'search' | 'profile';
 
 export default function StudentLookupDrawer() {
-  const { isLookupOpen, closeLookup } = useStudentLookup();
+  const { isLookupOpen, initialChildId, closeLookup } = useStudentLookup();
   const { selectedCenter } = useCenter();
 
   const [view, setView] = useState<DrawerView>('search');
@@ -48,14 +48,22 @@ export default function StudentLookupDrawer() {
   // Reset state when drawer opens
   useEffect(() => {
     if (isLookupOpen) {
-      setView('search');
-      setQuery('');
-      setResults([]);
-      setSearchError(null);
-      setSelectedChildId(null);
-      setTimeout(() => searchInputRef.current?.focus(), 300);
+      if (initialChildId != null) {
+        setSelectedChildId(initialChildId);
+        setView('profile');
+        setQuery('');
+        setResults([]);
+        setSearchError(null);
+      } else {
+        setView('search');
+        setQuery('');
+        setResults([]);
+        setSearchError(null);
+        setSelectedChildId(null);
+        setTimeout(() => searchInputRef.current?.focus(), 300);
+      }
     }
-  }, [isLookupOpen]);
+  }, [isLookupOpen, initialChildId]);
 
   // Debounced search
   useEffect(() => {

@@ -70,6 +70,18 @@ class CampRenewCreate(PydanticModel):
     payment_date: Optional[date] = None
 
 
+class CampEnrollUpdate(PydanticModel):
+    enrollment_start_date: Optional[date] = None
+    enrollment_end_date: Optional[date] = None
+    notes: Optional[str] = None
+    payment_status: Optional[str] = None
+    payment_amount: Optional[float] = None
+    amount_paid: Optional[float] = None
+    payment_method: Optional[str] = None
+    payment_reference: Optional[str] = None
+    payment_date: Optional[date] = None
+
+
 def _camp_status(camp: Camp) -> str:
     today = date.today()
     if today < camp.start_date:
@@ -546,6 +558,35 @@ def renew_camp_enrollment(
     if renewal.child_id:
         renewal.child  # trigger load
     return _enrollment_out(renewal)
+
+
+@router.patch("/{camp_id}/enrollments/{enrollment_id}")
+def update_camp_enrollment(
+    camp_id: int,
+    enrollment_id: int,
+    data: CampEnrollUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(
+        UserRole.CENTER_ADMIN, UserRole.CENTER_MANAGER, UserRole.SUPER_ADMIN
+    )),
+):
+    e = db.query(CampEnrollment).filter(
+        CampEnrollment.id == enrollment_id,
+        CampEnrollment.camp_id == camp_id,
+        CampEnrollment.is_archived == False,
+    ).first()
+    if not e:
+        raise HTTPException(status_code=404, detail="Enrollment not found")
+    update_data = data.model_dump(exclude_unset=True)
+    for field, val in update_data.items():
+        if field == "payment_status" and val:
+            setattr(e, field, PaymentStatus(val))
+        else:
+            setattr(e, field, val)
+    e.updated_by_id = current_user.id
+    db.commit()
+    db.refresh(e)
+    return _enrollment_out(e)
 
 
 @router.patch("/{camp_id}/enrollments/{enrollment_id}/cancel")

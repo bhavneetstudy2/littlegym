@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useCenter } from '@/contexts/CenterContext';
-import { Calendar, Plus, Users, X, ChevronRight, Tent, RefreshCw } from 'lucide-react';
+import { useStudentLookup } from '@/contexts/StudentLookupContext';
+import { Calendar, Plus, Users, X, ChevronRight, Tent, RefreshCw, LayoutGrid, List, Pencil, Search } from 'lucide-react';
 
 interface Camp {
   id: number;
@@ -626,10 +627,162 @@ function RenewModal({ camp, enrollment, onClose, onRenewed }: {
 }
 
 
+// ── Edit Enrollment Modal ────────────────────────────────────────────────────
+
+function EditEnrollmentModal({ camp, enrollment, onClose, onSaved }: {
+  camp: Camp;
+  enrollment: CampEnrollment;
+  onClose: () => void;
+  onSaved: (e: CampEnrollment) => void;
+}) {
+  const [form, setForm] = useState({
+    enrollment_start_date: enrollment.enrollment_start_date || '',
+    enrollment_end_date: enrollment.enrollment_end_date || '',
+    notes: enrollment.notes || '',
+    payment_status: enrollment.payment_status || 'PENDING',
+    payment_amount: enrollment.payment_amount != null ? String(enrollment.payment_amount) : '',
+    amount_paid: enrollment.amount_paid != null ? String(enrollment.amount_paid) : '',
+    payment_method: enrollment.payment_method || '',
+    payment_reference: enrollment.payment_reference || '',
+    payment_date: enrollment.payment_date || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const submit = async () => {
+    setError('');
+    setSaving(true);
+    try {
+      const updated = await api.patch<CampEnrollment>(
+        `/api/v1/camps/${camp.id}/enrollments/${enrollment.id}`,
+        {
+          enrollment_start_date: form.enrollment_start_date || null,
+          enrollment_end_date: form.enrollment_end_date || null,
+          notes: form.notes || null,
+          payment_status: form.payment_status,
+          payment_amount: form.payment_amount ? Number(form.payment_amount) : null,
+          amount_paid: form.amount_paid ? Number(form.amount_paid) : null,
+          payment_method: form.payment_method || null,
+          payment_reference: form.payment_reference || null,
+          payment_date: form.payment_date || null,
+        }
+      );
+      onSaved(updated);
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      setError(err?.message || 'Failed to save changes');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-xl max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">Edit Enrollment</h2>
+            <p className="text-xs text-gray-500 mt-0.5">{enrollment.child_name || '—'} · {camp.name}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg"><X className="w-4 h-4" /></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+
+          <div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Enrollment Period</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">From</label>
+                <input type="date" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  value={form.enrollment_start_date} onChange={e => setForm(f => ({ ...f, enrollment_start_date: e.target.value }))} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">To</label>
+                <input type="date" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  value={form.enrollment_end_date} onChange={e => setForm(f => ({ ...f, enrollment_end_date: e.target.value }))} />
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 pt-4">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Payment</p>
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                {(['PENDING', 'PARTIAL', 'PAID'] as const).map(s => (
+                  <button key={s} type="button"
+                    onClick={() => setForm(f => ({ ...f, payment_status: s }))}
+                    className={`py-2 rounded-xl text-xs font-semibold border transition ${
+                      form.payment_status === s
+                        ? s === 'PAID' ? 'bg-green-500 text-white border-green-500'
+                          : s === 'PARTIAL' ? 'bg-amber-500 text-white border-amber-500'
+                          : 'bg-gray-500 text-white border-gray-500'
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                    }`}>{s}</button>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Total Fee (₹)</label>
+                  <input type="number" min="0" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="0" value={form.payment_amount} onChange={e => setForm(f => ({ ...f, payment_amount: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Amount Paid (₹)</label>
+                  <input type="number" min="0" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="0" value={form.amount_paid} onChange={e => setForm(f => ({ ...f, amount_paid: e.target.value }))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Method</label>
+                  <select className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                    value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))}>
+                    <option value="">Select...</option>
+                    <option>CASH</option><option>UPI</option><option>CARD</option><option>BANK_TRANSFER</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Date</label>
+                  <input type="date" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    value={form.payment_date} onChange={e => setForm(f => ({ ...f, payment_date: e.target.value }))} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Reference / Transaction ID</label>
+                <input className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="UPI ref, cheque no, etc."
+                  value={form.payment_reference} onChange={e => setForm(f => ({ ...f, payment_reference: e.target.value }))} />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Notes</label>
+            <textarea className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
+              rows={2} placeholder="Any notes..."
+              value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+          </div>
+        </div>
+
+        <div className="px-5 pb-5 flex gap-3 shrink-0 border-t border-gray-100 pt-4">
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 text-sm border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50">Cancel</button>
+          <button onClick={submit} disabled={saving} className="flex-1 px-4 py-2.5 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-60">
+            {saving ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default function CampsPage() {
   const { selectedCenter } = useCenter();
+  const { openLookupWithChild } = useStudentLookup();
   const centerParam = selectedCenter ? `center_id=${selectedCenter.id}` : '';
   const [userRole, setUserRole] = useState<string>('');
   useEffect(() => {
@@ -650,6 +803,9 @@ export default function CampsPage() {
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [renewingEnrollment, setRenewingEnrollment] = useState<CampEnrollment | null>(null);
+  const [editingEnrollment, setEditingEnrollment] = useState<CampEnrollment | null>(null);
+  const [enrollmentView, setEnrollmentView] = useState<'card' | 'list'>('card');
+  const [enrollmentSearch, setEnrollmentSearch] = useState('');
   const [toast, setToast] = useState<string | null>(null);
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 4000); };
 
@@ -682,6 +838,7 @@ export default function CampsPage() {
 
   const openCamp = (camp: Camp) => {
     setSelectedCamp(camp);
+    setEnrollmentSearch('');
     loadEnrollments(camp.id);
   };
 
@@ -752,7 +909,35 @@ export default function CampsPage() {
             </button>
           </div>
 
-          {/* Students grid */}
+          {/* Toolbar: search + view toggle */}
+          {!loadingEnrollments && enrollments.length > 0 && (
+            <div className="flex items-center gap-2 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                <input
+                  type="text"
+                  value={enrollmentSearch}
+                  onChange={e => setEnrollmentSearch(e.target.value)}
+                  placeholder="Search student or parent..."
+                  className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div className="flex border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setEnrollmentView('card')}
+                  className={`p-2 ${enrollmentView === 'card' ? 'bg-blue-600 text-white' : 'bg-white text-gray-400 hover:bg-gray-50'}`}
+                  title="Card view"
+                ><LayoutGrid className="w-4 h-4" /></button>
+                <button
+                  onClick={() => setEnrollmentView('list')}
+                  className={`p-2 ${enrollmentView === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-400 hover:bg-gray-50'}`}
+                  title="List view"
+                ><List className="w-4 h-4" /></button>
+              </div>
+            </div>
+          )}
+
+          {/* Students grid/list */}
           {loadingEnrollments ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[1, 2, 3, 4, 5, 6].map(i => (
@@ -779,83 +964,177 @@ export default function CampsPage() {
                 Enroll the first student →
               </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {enrollments.map(e => (
-                <div key={e.id} className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-sm transition flex flex-col gap-3">
-                  {/* Top row: avatar + name + type badge */}
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 text-sm font-bold flex items-center justify-center shrink-0">
-                      {(e.child_name || '?').charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="text-sm font-semibold text-gray-900 truncate">{e.child_name || '—'}</p>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${
-                          e.is_existing_student ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-                        }`}>
-                          {e.is_existing_student ? 'Existing' : 'New'}
-                        </span>
+          ) : (() => {
+            const q = enrollmentSearch.toLowerCase();
+            const filtered = enrollmentSearch
+              ? enrollments.filter(e =>
+                  (e.child_name || '').toLowerCase().includes(q) ||
+                  (e.parent_name || '').toLowerCase().includes(q) ||
+                  (e.parent_phone || '').includes(enrollmentSearch)
+                )
+              : enrollments;
+
+            if (filtered.length === 0) return (
+              <div className="text-center py-10 text-gray-400 text-sm">No results for &quot;{enrollmentSearch}&quot;</div>
+            );
+
+            // ── Card view ──
+            if (enrollmentView === 'card') return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filtered.map(e => (
+                  <div key={e.id} className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-sm transition flex flex-col gap-3">
+                    {/* Top row: avatar + name */}
+                    <div className="flex items-start gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-full bg-blue-100 text-blue-700 text-sm font-bold flex items-center justify-center shrink-0 ${e.child_id ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''}`}
+                        onClick={() => e.child_id && openLookupWithChild(e.child_id)}
+                        title={e.child_id ? 'View student profile' : undefined}
+                      >
+                        {(e.child_name || '?').charAt(0).toUpperCase()}
                       </div>
-                      {e.parent_name && (
-                        <p className="text-xs text-gray-500 mt-0.5">{e.parent_name}</p>
-                      )}
-                      {e.parent_phone && (
-                        <p className="text-xs text-gray-400">{e.parent_phone}</p>
-                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p
+                            className={`text-sm font-semibold text-gray-900 truncate ${e.child_id ? 'cursor-pointer hover:text-blue-600' : ''}`}
+                            onClick={() => e.child_id && openLookupWithChild(e.child_id)}
+                          >{e.child_name || '—'}</p>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${
+                            e.is_existing_student ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                          }`}>
+                            {e.is_existing_student ? 'Existing' : 'New'}
+                          </span>
+                        </div>
+                        {e.parent_name && <p className="text-xs text-gray-500 mt-0.5">{e.parent_name}</p>}
+                        {e.parent_phone && <p className="text-xs text-gray-400">{e.parent_phone}</p>}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Period */}
-                  {(e.enrollment_start_date || e.enrollment_end_date) && (
-                    <div className="flex items-center gap-1.5 text-xs text-blue-600 font-medium bg-blue-50 rounded-lg px-2.5 py-1.5">
+                    {/* Period — always shown */}
+                    <div className="flex items-center gap-1.5 text-xs font-medium rounded-lg px-2.5 py-1.5 bg-blue-50 text-blue-600">
                       <Calendar className="w-3.5 h-3.5 shrink-0" />
-                      {e.enrollment_start_date ? fmtDate(e.enrollment_start_date) : '?'}
-                      {' – '}
-                      {e.enrollment_end_date ? fmtDate(e.enrollment_end_date) : '?'}
+                      {e.enrollment_start_date && e.enrollment_end_date
+                        ? `${fmtDate(e.enrollment_start_date)} – ${fmtDate(e.enrollment_end_date)}`
+                        : e.enrollment_start_date
+                        ? `From ${fmtDate(e.enrollment_start_date)}`
+                        : e.enrollment_end_date
+                        ? `Until ${fmtDate(e.enrollment_end_date)}`
+                        : 'Full Camp'}
                     </div>
-                  )}
 
-                  {/* Payment */}
-                  <div className="flex items-center justify-between text-xs">
-                    <span className={`font-semibold ${
-                      e.payment_status === 'PAID' ? 'text-green-600'
-                      : e.payment_status === 'PARTIAL' ? 'text-amber-600'
-                      : 'text-gray-400'
-                    }`}>
-                      {e.payment_status === 'PAID' ? '✓ Paid'
-                        : e.payment_status === 'PARTIAL' ? `Partial · ₹${e.amount_paid ?? 0} paid`
-                        : 'Payment Pending'}
-                    </span>
-                    {e.payment_amount && (
-                      <span className="text-gray-400">₹{e.payment_amount} total</span>
-                    )}
-                  </div>
+                    {/* Payment */}
+                    <div className="flex items-center justify-between text-xs">
+                      <span className={`font-semibold ${
+                        e.payment_status === 'PAID' ? 'text-green-600'
+                        : e.payment_status === 'PARTIAL' ? 'text-amber-600'
+                        : 'text-red-500'
+                      }`}>
+                        {e.payment_status === 'PAID' ? '✓ Paid'
+                          : e.payment_status === 'PARTIAL' ? `Partial · ₹${e.amount_paid ?? 0} paid`
+                          : '⚠ Pending'}
+                      </span>
+                      {e.payment_amount && <span className="text-gray-400">₹{e.payment_amount} total</span>}
+                    </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-1 border-t border-gray-50">
-                    <button
-                      onClick={() => setRenewingEnrollment(e)}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition"
-                      title="Renew for next week"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                      Renew
-                    </button>
-                    <button
-                      onClick={() => cancelEnrollment(e)}
-                      disabled={cancellingId === e.id}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition disabled:opacity-40"
-                      title="Cancel enrollment"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      Cancel
-                    </button>
+                    {/* Actions: Edit + Renew only (no Cancel on card) */}
+                    <div className="flex gap-2 pt-1 border-t border-gray-50">
+                      <button
+                        onClick={() => setEditingEnrollment(e)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => setRenewingEnrollment(e)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        Renew
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            );
+
+            // ── List view ──
+            return (
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Student</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Period</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Payment</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {filtered.map(e => (
+                      <tr key={e.id} className="hover:bg-gray-50 transition">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className={`w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0 ${e.child_id ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''}`}
+                              onClick={() => e.child_id && openLookupWithChild(e.child_id)}
+                            >
+                              {(e.child_name || '?').charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p
+                                className={`font-medium text-gray-900 leading-tight ${e.child_id ? 'cursor-pointer hover:text-blue-600' : ''}`}
+                                onClick={() => e.child_id && openLookupWithChild(e.child_id)}
+                              >{e.child_name || '—'}</p>
+                              {e.parent_name && <p className="text-xs text-gray-400 leading-tight">{e.parent_name}{e.parent_phone ? ` · ${e.parent_phone}` : ''}</p>}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                          {e.enrollment_start_date && e.enrollment_end_date
+                            ? `${fmtDate(e.enrollment_start_date)} – ${fmtDate(e.enrollment_end_date)}`
+                            : e.enrollment_start_date ? `From ${fmtDate(e.enrollment_start_date)}`
+                            : e.enrollment_end_date ? `Until ${fmtDate(e.enrollment_end_date)}`
+                            : <span className="text-gray-400 italic">Full Camp</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs font-semibold ${
+                            e.payment_status === 'PAID' ? 'text-green-600'
+                            : e.payment_status === 'PARTIAL' ? 'text-amber-600'
+                            : 'text-red-500'
+                          }`}>
+                            {e.payment_status === 'PAID' ? '✓ Paid'
+                              : e.payment_status === 'PARTIAL' ? `Partial · ₹${e.amount_paid ?? 0}`
+                              : '⚠ Pending'}
+                          </span>
+                          {e.payment_amount != null && <span className="text-xs text-gray-400 ml-1">/ ₹{e.payment_amount}</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => setEditingEnrollment(e)}
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                              title="Edit"
+                            ><Pencil className="w-3.5 h-3.5" /></button>
+                            <button
+                              onClick={() => setRenewingEnrollment(e)}
+                              className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition"
+                              title="Renew"
+                            ><RefreshCw className="w-3.5 h-3.5" /></button>
+                            <button
+                              onClick={() => cancelEnrollment(e)}
+                              disabled={cancellingId === e.id}
+                              className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition disabled:opacity-40"
+                              title="Cancel enrollment"
+                            ><X className="w-3.5 h-3.5" /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
         </>
       ) : (
         <>
@@ -969,6 +1248,19 @@ export default function CampsPage() {
             } else {
               showToast(`${enrollment.child_name} enrolled in ${selectedCamp.name}`);
             }
+          }}
+        />
+      )}
+
+      {editingEnrollment && selectedCamp && (
+        <EditEnrollmentModal
+          camp={selectedCamp}
+          enrollment={editingEnrollment}
+          onClose={() => setEditingEnrollment(null)}
+          onSaved={updated => {
+            setEnrollments(prev => prev.map(e => e.id === updated.id ? updated : e));
+            setEditingEnrollment(null);
+            showToast('Enrollment updated');
           }}
         />
       )}
