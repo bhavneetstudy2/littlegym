@@ -1010,16 +1010,21 @@ export default function CampsPage() {
                     </div>
 
                     {/* Period — always shown */}
-                    <div className="flex items-center gap-1.5 text-xs font-medium rounded-lg px-2.5 py-1.5 bg-blue-50 text-blue-600">
-                      <Calendar className="w-3.5 h-3.5 shrink-0" />
-                      {e.enrollment_start_date && e.enrollment_end_date
-                        ? `${fmtDate(e.enrollment_start_date)} – ${fmtDate(e.enrollment_end_date)}`
-                        : e.enrollment_start_date
-                        ? `From ${fmtDate(e.enrollment_start_date)}`
-                        : e.enrollment_end_date
-                        ? `Until ${fmtDate(e.enrollment_end_date)}`
-                        : 'Full Camp'}
-                    </div>
+                    {e.enrollment_start_date || e.enrollment_end_date ? (
+                      <div className="flex items-center gap-1.5 text-xs font-medium rounded-lg px-2.5 py-1.5 bg-blue-50 text-blue-600">
+                        <Calendar className="w-3.5 h-3.5 shrink-0" />
+                        {e.enrollment_start_date && e.enrollment_end_date
+                          ? `${fmtDate(e.enrollment_start_date)} – ${fmtDate(e.enrollment_end_date)}`
+                          : e.enrollment_start_date
+                          ? `From ${fmtDate(e.enrollment_start_date)}`
+                          : `Until ${fmtDate(e.enrollment_end_date!)}`}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs font-medium rounded-lg px-2.5 py-1.5 bg-amber-50 text-amber-600 cursor-pointer hover:bg-amber-100" onClick={() => setEditingEnrollment(e)}>
+                        <Pencil className="w-3.5 h-3.5 shrink-0" />
+                        Period not set — tap to edit
+                      </div>
+                    )}
 
                     {/* Payment */}
                     <div className="flex items-center justify-between text-xs">
@@ -1094,7 +1099,7 @@ export default function CampsPage() {
                             ? `${fmtDate(e.enrollment_start_date)} – ${fmtDate(e.enrollment_end_date)}`
                             : e.enrollment_start_date ? `From ${fmtDate(e.enrollment_start_date)}`
                             : e.enrollment_end_date ? `Until ${fmtDate(e.enrollment_end_date)}`
-                            : <span className="text-gray-400 italic">Full Camp</span>}
+                            : <span className="text-amber-500 italic">Period not set</span>}
                         </td>
                         <td className="px-4 py-3">
                           <span className={`text-xs font-semibold ${
