@@ -313,17 +313,59 @@ def list_camp_enrollments(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    enrollments = (
-        db.query(CampEnrollment)
-        .options(joinedload(CampEnrollment.child))
-        .filter(
-            CampEnrollment.camp_id == camp_id,
-            CampEnrollment.is_archived == False,
-        )
-        .order_by(CampEnrollment.created_at)
-        .all()
-    )
-    return [_enrollment_out(e) for e in enrollments]
+    rows = db.execute(text("""
+        SELECT
+            ce.*,
+            COALESCE(ce.parent_name, p.name)  AS resolved_parent_name,
+            COALESCE(ce.parent_phone, p.phone) AS resolved_parent_phone
+        FROM camp_enrollments ce
+        LEFT JOIN family_links fl ON fl.child_id = ce.child_id
+            AND fl.is_primary_contact = true
+            AND fl.is_archived = false
+        LEFT JOIN parents p ON p.id = fl.parent_id
+            AND p.is_archived = false
+        WHERE ce.camp_id = :camp_id
+          AND ce.is_archived = false
+        ORDER BY ce.created_at
+    """), {"camp_id": camp_id}).fetchall()
+
+    # Load child names via ORM (for existing students)
+    child_ids = [r.child_id for r in rows if r.child_id]
+    children = {}
+    if child_ids:
+        from app.models import Child
+        for c in db.query(Child).filter(Child.id.in_(child_ids)).all():
+            children[c.id] = f"{c.first_name or ''} {c.last_name or ''}".strip()
+
+    result = []
+    for r in rows:
+        child_name = r.child_name
+        if r.child_id and r.child_id in children:
+            child_name = children[r.child_id] or child_name
+        result.append({
+            "id": r.id,
+            "camp_id": r.camp_id,
+            "is_existing_student": r.is_existing_student,
+            "child_id": r.child_id,
+            "child_name": child_name,
+            "child_dob": str(r.child_dob) if r.child_dob else None,
+            "parent_name": r.resolved_parent_name,
+            "parent_phone": r.resolved_parent_phone,
+            "parent_email": r.parent_email,
+            "notes": r.notes,
+            "status": r.status,
+            "payment_status": r.payment_status,
+            "payment_amount": float(r.payment_amount) if r.payment_amount is not None else None,
+            "amount_paid": float(r.amount_paid) if r.amount_paid is not None else None,
+            "payment_method": r.payment_method,
+            "payment_reference": r.payment_reference,
+            "payment_date": str(r.payment_date) if r.payment_date else None,
+            "enrollment_start_date": str(r.enrollment_start_date) if r.enrollment_start_date else None,
+            "enrollment_end_date": str(r.enrollment_end_date) if r.enrollment_end_date else None,
+            "lead_created": False,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        })
+    return result
 
 
 @router.post("/{camp_id}/enrollments")

@@ -26,7 +26,7 @@ interface CampEnrollment {
   child_id: number | null;
   child_name: string | null;
   child_dob: string | null;
-  parent_name: string | null;
+  parent_name: string | null;   // populated for new students; also fetched for existing
   parent_phone: string | null;
   parent_email: string | null;
   notes: string | null;
@@ -710,51 +710,196 @@ export default function CampsPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
-            <Tent className="w-5 h-5 text-orange-600" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Camps</h1>
-            <p className="text-sm text-gray-500">Short-term camp programs</p>
-          </div>
-        </div>
-        {canManageCamps && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700"
-          >
-            <Plus className="w-4 h-4" />
-            Create Camp
-          </button>
-        )}
-      </div>
+    <div className="p-4 md:p-6 max-w-6xl mx-auto">
 
-      <div className="flex flex-col lg:flex-row gap-4">
-        {/* Camp list */}
-        <div className="flex-1">
-          {loading ? (
-            <div className="space-y-3">
-              {[1, 2].map(i => (
+      {/* ── Camp detail view ── */}
+      {selectedCamp ? (
+        <>
+          {/* Camp header */}
+          <div className="flex items-center gap-3 mb-4">
+            <button
+              onClick={() => { setSelectedCamp(null); setEnrollments([]); }}
+              className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+              title="Back to camps"
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" />
+            </button>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl font-bold text-gray-900">{selectedCamp.name}</h1>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[selectedCamp.status]}`}>
+                  {selectedCamp.status}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500">
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {fmtDate(selectedCamp.start_date)} – {fmtDate(selectedCamp.end_date)}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5" />
+                  {selectedCamp.enrolled_count}{selectedCamp.capacity ? `/${selectedCamp.capacity}` : ''} enrolled
+                </span>
+                {selectedCamp.price !== null && <span>₹{selectedCamp.price}</span>}
+              </div>
+            </div>
+            <button
+              onClick={() => setShowEnrollModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              Enroll Student
+            </button>
+          </div>
+
+          {/* Students grid */}
+          {loadingEnrollments ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map(i => (
                 <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 animate-pulse">
-                  <div className="h-5 bg-gray-200 rounded w-40 mb-2" />
-                  <div className="h-3 bg-gray-200 rounded w-56" />
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-gray-200 rounded-full" />
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-1.5" />
+                      <div className="h-3 bg-gray-200 rounded w-1/2" />
+                    </div>
+                  </div>
+                  <div className="h-3 bg-gray-200 rounded w-full" />
+                </div>
+              ))}
+            </div>
+          ) : enrollments.length === 0 ? (
+            <div className="bg-white border border-gray-100 rounded-xl p-14 text-center">
+              <Users className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+              <p className="text-gray-500 text-sm font-medium mb-1">No students enrolled yet</p>
+              <button
+                onClick={() => setShowEnrollModal(true)}
+                className="text-blue-600 hover:underline text-sm mt-1"
+              >
+                Enroll the first student →
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {enrollments.map(e => (
+                <div key={e.id} className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-sm transition flex flex-col gap-3">
+                  {/* Top row: avatar + name + type badge */}
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 text-sm font-bold flex items-center justify-center shrink-0">
+                      {(e.child_name || '?').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{e.child_name || '—'}</p>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${
+                          e.is_existing_student ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                        }`}>
+                          {e.is_existing_student ? 'Existing' : 'New'}
+                        </span>
+                      </div>
+                      {e.parent_name && (
+                        <p className="text-xs text-gray-500 mt-0.5">{e.parent_name}</p>
+                      )}
+                      {e.parent_phone && (
+                        <p className="text-xs text-gray-400">{e.parent_phone}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Period */}
+                  {(e.enrollment_start_date || e.enrollment_end_date) && (
+                    <div className="flex items-center gap-1.5 text-xs text-blue-600 font-medium bg-blue-50 rounded-lg px-2.5 py-1.5">
+                      <Calendar className="w-3.5 h-3.5 shrink-0" />
+                      {e.enrollment_start_date ? fmtDate(e.enrollment_start_date) : '?'}
+                      {' – '}
+                      {e.enrollment_end_date ? fmtDate(e.enrollment_end_date) : '?'}
+                    </div>
+                  )}
+
+                  {/* Payment */}
+                  <div className="flex items-center justify-between text-xs">
+                    <span className={`font-semibold ${
+                      e.payment_status === 'PAID' ? 'text-green-600'
+                      : e.payment_status === 'PARTIAL' ? 'text-amber-600'
+                      : 'text-gray-400'
+                    }`}>
+                      {e.payment_status === 'PAID' ? '✓ Paid'
+                        : e.payment_status === 'PARTIAL' ? `Partial · ₹${e.amount_paid ?? 0} paid`
+                        : 'Payment Pending'}
+                    </span>
+                    {e.payment_amount && (
+                      <span className="text-gray-400">₹{e.payment_amount} total</span>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-1 border-t border-gray-50">
+                    <button
+                      onClick={() => setRenewingEnrollment(e)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition"
+                      title="Renew for next week"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      Renew
+                    </button>
+                    <button
+                      onClick={() => cancelEnrollment(e)}
+                      disabled={cancellingId === e.id}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition disabled:opacity-40"
+                      title="Cancel enrollment"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          {/* ── Camps list view ── */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                <Tent className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Camps</h1>
+                <p className="text-sm text-gray-500">Short-term camp programs</p>
+              </div>
+            </div>
+            {canManageCamps && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4" />
+                Create Camp
+              </button>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-white rounded-xl border border-gray-100 p-5 animate-pulse">
+                  <div className="h-5 bg-gray-200 rounded w-40 mb-3" />
+                  <div className="h-3 bg-gray-200 rounded w-56 mb-2" />
+                  <div className="h-3 bg-gray-200 rounded w-32" />
                 </div>
               ))}
             </div>
           ) : camps.length === 0 ? (
-            <div className="bg-white border border-gray-100 rounded-xl p-10 text-center">
-              <Tent className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <div className="bg-white border border-gray-100 rounded-xl p-14 text-center">
+              <Tent className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500 text-sm font-medium mb-1">No camps yet</p>
               <p className="text-gray-400 text-xs">Create a camp to get started.</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {camps.map(camp => {
-                const isSelected = selectedCamp?.id === camp.id;
                 const weeks = Math.round(
                   (new Date(camp.end_date).getTime() - new Date(camp.start_date).getTime()) / (7 * 86400000)
                 );
@@ -762,142 +907,40 @@ export default function CampsPage() {
                   <button
                     key={camp.id}
                     onClick={() => openCamp(camp)}
-                    className={`w-full text-left bg-white border rounded-xl p-4 transition hover:shadow-sm ${isSelected ? 'border-blue-400 ring-1 ring-blue-300' : 'border-gray-100 hover:border-gray-200'}`}
+                    className="text-left bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md hover:border-blue-200 transition group"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-gray-900 text-base">{camp.name}</span>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[camp.status]}`}>
-                            {camp.status}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3.5 h-3.5" />
-                            {fmtDate(camp.start_date)} – {fmtDate(camp.end_date)}
-                          </span>
-                          <span>{weeks} week{weeks !== 1 ? 's' : ''}</span>
-                          {camp.price !== null && <span>₹{camp.price}</span>}
-                        </div>
-                        {camp.description && (
-                          <p className="text-xs text-gray-400 mt-1.5 truncate">{camp.description}</p>
-                        )}
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <span className="font-semibold text-gray-900 text-base block">{camp.name}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium mt-1 inline-block ${STATUS_BADGE[camp.status]}`}>
+                          {camp.status}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0 ml-3">
-                        <div className="text-right">
-                          <div className="flex items-center gap-1 text-sm font-bold text-gray-700">
-                            <Users className="w-3.5 h-3.5 text-gray-400" />
-                            {camp.enrolled_count}
-                            {camp.capacity && <span className="text-gray-400 font-normal text-xs">/{camp.capacity}</span>}
-                          </div>
-                          <p className="text-xs text-gray-400">enrolled</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
-                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-400 transition shrink-0 mt-1" />
                     </div>
+                    <div className="space-y-1.5 text-xs text-gray-500">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5" />
+                        {fmtDate(camp.start_date)} – {fmtDate(camp.end_date)}
+                        <span className="text-gray-400">({weeks}w)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5" />
+                        <span className="font-semibold text-gray-700">{camp.enrolled_count}</span>
+                        {camp.capacity ? <span>/ {camp.capacity} enrolled</span> : <span>enrolled</span>}
+                      </div>
+                      {camp.price !== null && <div>₹{camp.price}</div>}
+                    </div>
+                    {camp.description && (
+                      <p className="text-xs text-gray-400 mt-2 truncate">{camp.description}</p>
+                    )}
                   </button>
                 );
               })}
             </div>
           )}
-        </div>
-
-        {/* Enrollment panel */}
-        {selectedCamp && (
-          <div className="lg:w-96 bg-white border border-gray-100 rounded-xl flex flex-col max-h-[600px]">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
-              <div>
-                <h2 className="font-bold text-gray-900 text-sm">{selectedCamp.name}</h2>
-                <p className="text-xs text-gray-400 mt-0.5">{selectedCamp.enrolled_count} enrolled</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowEnrollModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Enroll
-                </button>
-                <button onClick={() => { setSelectedCamp(null); setEnrollments([]); }} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto">
-              {loadingEnrollments ? (
-                <div className="p-6 space-y-2">
-                  {[1, 2, 3].map(i => <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />)}
-                </div>
-              ) : enrollments.length === 0 ? (
-                <div className="p-8 text-center text-gray-400 text-sm">
-                  <Users className="w-8 h-8 mx-auto mb-2 text-gray-200" />
-                  No students enrolled yet.
-                  <br />
-                  <button onClick={() => setShowEnrollModal(true)} className="text-blue-600 hover:underline mt-1 text-xs">Enroll first student →</button>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-50">
-                  {enrollments.map(e => (
-                    <div key={e.id} className="flex items-center gap-3 px-4 py-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0">
-                        {(e.child_name || '?').charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-sm font-medium text-gray-900 truncate">{e.child_name || '—'}</p>
-                          {e.is_existing_student ? (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 font-medium shrink-0">Existing</span>
-                          ) : (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium shrink-0">New</span>
-                          )}
-                        </div>
-                        {(e.enrollment_start_date || e.enrollment_end_date) && (
-                          <p className="text-xs text-blue-600 font-medium mt-0.5">
-                            {e.enrollment_start_date ? fmtDate(e.enrollment_start_date) : '?'}
-                            {' – '}
-                            {e.enrollment_end_date ? fmtDate(e.enrollment_end_date) : '?'}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400">
-                          <span className={`font-semibold ${
-                            e.payment_status === 'PAID' ? 'text-green-600'
-                            : e.payment_status === 'PARTIAL' ? 'text-amber-600'
-                            : 'text-gray-400'
-                          }`}>
-                            {e.payment_status === 'PAID' ? '✓ Paid'
-                              : e.payment_status === 'PARTIAL' ? `Partial ₹${e.amount_paid ?? 0}`
-                              : 'Pending'}
-                          </span>
-                          {e.payment_amount && <span className="text-gray-300">· ₹{e.payment_amount} total</span>}
-                          {e.payment_method && <span>{e.payment_method}</span>}
-                        </div>
-                        {e.parent_phone && <p className="text-xs text-gray-400 mt-0.5">{e.parent_phone}</p>}
-                      </div>
-                      <button
-                        onClick={() => setRenewingEnrollment(e)}
-                        className="p-1.5 text-gray-300 hover:text-green-600 rounded-lg transition"
-                        title="Renew for next week"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => cancelEnrollment(e)}
-                        disabled={cancellingId === e.id}
-                        className="p-1.5 text-gray-300 hover:text-red-500 rounded-lg transition disabled:opacity-40"
-                        title="Cancel enrollment"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* Modals */}
       {showCreateModal && (
